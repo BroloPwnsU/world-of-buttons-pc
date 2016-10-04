@@ -36,7 +36,7 @@ public class _CanvasScript : MonoBehaviour
     public Text YouLoseText;
     public Text YouWinText;
 
-    public Text DebugRandomText;
+    public Text GameStateText;
 
     public float InitialActiveScreenSeconds;
     public float MinimumActiveScreenSeconds;
@@ -54,6 +54,7 @@ public class _CanvasScript : MonoBehaviour
     public float BuffBossHealthDecreasePercentPerTier;
     public float BuffPlayerHealthIncreasePercentPerTier;
     public float BuffCritChancePerTier;
+    public float BuffNonsense;
     #endregion
 
     // Use this for initialization
@@ -70,9 +71,9 @@ public class _CanvasScript : MonoBehaviour
     {
         //If at any time they hit the escape key it goes back to the title screen.
         // This doesn't care about current game state.
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Minus))
         {
-            ResetGameValues();
+            RevertToTitleScreen();
             RenderGameState();
             return;
         }
@@ -399,6 +400,9 @@ public class _CanvasScript : MonoBehaviour
 
     void RenderGameState()
     {
+        ShowText(true, GameStateText);
+        GameStateText.text = _gameState.ToString();
+
         if (_gameState == GameState.TitleScreen)
         {
             ShowText(true, TitleText);
