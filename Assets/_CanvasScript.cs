@@ -39,6 +39,8 @@ public class _CanvasScript : MonoBehaviour
     public Text GameStateText;
 
     public GameObject BuffPanel;
+    public GameObject BossPanel;
+    public GameObject PlayerPanel;
 
     public float InitialActiveScreenSeconds;
     public float MinimumActiveScreenSeconds;
@@ -418,6 +420,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            BuffPanel.SetActive(false);
+            BossPanel.SetActive(false);
+            PlayerPanel.SetActive(false);
         }
         else if (_gameState == GameState.BuffScreen)
         {
@@ -436,6 +442,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            BuffPanel.SetActive(true);
+            BossPanel.SetActive(false);
+            PlayerPanel.SetActive(false);
         }
         else if (_gameState == GameState.PrepScreen)
         {
@@ -456,6 +466,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            BuffPanel.SetActive(false);
+            BossPanel.SetActive(true);
+            PlayerPanel.SetActive(true);
         }
         else if (_gameState == GameState.ActiveScreen)
         {
@@ -484,6 +498,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            BuffPanel.SetActive(false);
+            BossPanel.SetActive(true);
+            PlayerPanel.SetActive(true);
         }
         else if (_gameState == GameState.FailScreen)
         {
@@ -511,6 +529,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            BuffPanel.SetActive(false);
+            BossPanel.SetActive(true);
+            PlayerPanel.SetActive(true);
         }
         else if (_gameState == GameState.SuccessScreen)
         {
@@ -538,6 +560,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(true, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            BuffPanel.SetActive(false);
+            BossPanel.SetActive(true);
+            PlayerPanel.SetActive(true);
         }
         else if (_gameState == GameState.DefeatScreen)
         {
@@ -552,6 +578,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(true, YouLoseText);
             ShowText(false, YouWinText);
+
+            BuffPanel.SetActive(false);
+            BossPanel.SetActive(false);
+            PlayerPanel.SetActive(false);
         }
         else if (_gameState == GameState.VictoryScreen)
         {
@@ -566,6 +596,10 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(true, YouWinText);
+
+            BuffPanel.SetActive(false);
+            BossPanel.SetActive(false);
+            PlayerPanel.SetActive(false);
         }
     }
 
