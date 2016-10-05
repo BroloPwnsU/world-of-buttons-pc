@@ -38,6 +38,8 @@ public class _CanvasScript : MonoBehaviour
 
     public Text GameStateText;
 
+    public GameObject BuffPanel;
+
     public float InitialActiveScreenSeconds;
     public float MinimumActiveScreenSeconds;
     public float ActiveScreenScalingFactor;
@@ -419,6 +421,8 @@ public class _CanvasScript : MonoBehaviour
         }
         else if (_gameState == GameState.BuffScreen)
         {
+            BuffPanel.SetActive(true);
+
             ShowText(false, TitleText);
             ShowText(true, BuffText);
             UpdateBuffText();
@@ -435,6 +439,8 @@ public class _CanvasScript : MonoBehaviour
         }
         else if (_gameState == GameState.PrepScreen)
         {
+            BuffPanel.SetActive(false);
+
             ShowText(false, TitleText);
             ShowText(false, BuffText);
             ShowText(true, GetReadyText);
