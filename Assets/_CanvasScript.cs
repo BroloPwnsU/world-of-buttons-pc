@@ -7,6 +7,7 @@ public class _CanvasScript : MonoBehaviour
 {
     #region Private Members
     private float _timeLeft;
+    private float _currentTimeLeftSeconds;
     private float _currentActivePeriodSeconds;
     private int _completedCycles;
     private GameButton _currentButton;
@@ -15,7 +16,9 @@ public class _CanvasScript : MonoBehaviour
 
     private GameState _gameState;
     private float _bossHealth;
+    private float _bossStartHealth;
     private float _playerHealth;
+    private float _playerStartHealth;
     private float _buffIncreaseActiveTimeMultiplier = 1;
     private float _buffIncreaseActiveTimePercent = 0;
     private float _buffDecreaseBossHealthPercent = 0;
@@ -25,7 +28,6 @@ public class _CanvasScript : MonoBehaviour
 
     #region Public Properties
     public Text ButtonNameText;
-    public Text TimeLeftText;
     public Text SuccessText;
     public Text FailText;
     public Text TitleText;
@@ -41,6 +43,7 @@ public class _CanvasScript : MonoBehaviour
     public GameObject BuffPanel;
     public GameObject BossPanel;
     public GameObject PlayerPanel;
+    public GameObject TimerPanel;
 
     public float InitialActiveScreenSeconds;
     public float MinimumActiveScreenSeconds;
@@ -50,9 +53,11 @@ public class _CanvasScript : MonoBehaviour
     public float SuccessScreenSeconds;
 
     public float BossStartHealth;
-    public float BossDamagePerAttack;
+    public float BossMaximumDamagePerAttack;
+    public float BossMinimumDamagePerAttack;
     public float PlayerStartHealth;
-    public float PlayerDamagePerAttack;
+    public float PlayerMinimumDamagePerAttack;
+    public float PlayerMaximumDamagePerAttack;
     public int PlayerAttacksPerBossAttack;
     public float BuffPlayerTimeIncreasePercentPerTier;
     public float BuffBossHealthDecreasePercentPerTier;
@@ -61,13 +66,17 @@ public class _CanvasScript : MonoBehaviour
     public float BuffNonsense;
 
     private PartyGroupBrain _partyScript;
+    private BossBrain _bossScript;
+    private TimerPanelBrain _timerPanelScript;
     #endregion
 
     // Use this for initialization
     void Start()
     {
         _gameButtonList = GetGameButtonList();
+        _bossScript = BossPanel.GetComponent<BossBrain>();
         _partyScript = PlayerPanel.GetComponent<PartyGroupBrain>();
+        _timerPanelScript = TimerPanel.GetComponent<TimerPanelBrain>();
 
         RevertToTitleScreen();
     }
@@ -224,6 +233,7 @@ public class _CanvasScript : MonoBehaviour
         _playerHealth = PlayerStartHealth;
         _completedCycles = 0;
         _timeLeft = 0.0f;
+        _currentTimeLeftSeconds = 0.0f;
     }
 
     #endregion
@@ -255,7 +265,11 @@ public class _CanvasScript : MonoBehaviour
 
     void EndBuffScreen()
     {
-        //Not implemented
+        //Apply health buffs/debuffs to starting health meters
+        _playerStartHealth = PlayerStartHealth * (1 + _buffIncreasePlayerHealthPercent);
+        _playerHealth = _playerStartHealth;
+        _bossStartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
+        _bossHealth = _bossStartHealth;
 
         //Skip to prep screen
         BeginPrepScreen();
@@ -265,6 +279,7 @@ public class _CanvasScript : MonoBehaviour
     {
         _gameState = GameState.PrepScreen;
         _timeLeft = PrepScreenSeconds;
+        _currentTimeLeftSeconds = _timeLeft;
     }
 
     void EndPrepScreen()
@@ -283,6 +298,7 @@ public class _CanvasScript : MonoBehaviour
         _currentActivePeriodSeconds = ((InitialActiveScreenSeconds - MinimumActiveScreenSeconds) * (1 / Mathf.Pow(ActiveScreenScalingFactor * _completedCycles + 1, 2)) + MinimumActiveScreenSeconds) * _buffIncreaseActiveTimeMultiplier;
 
         _timeLeft = _currentActivePeriodSeconds;
+        _currentTimeLeftSeconds = _timeLeft;
 
         int wGameButtonCount = _gameButtonList.Count;
 
@@ -336,6 +352,7 @@ public class _CanvasScript : MonoBehaviour
     {
         //Set the pause duration.
         _timeLeft = SuccessScreenSeconds;
+        _currentTimeLeftSeconds = _timeLeft;
         _gameState = GameState.SuccessScreen;
     }
 
@@ -357,6 +374,7 @@ public class _CanvasScript : MonoBehaviour
     void BeginFailScreen()
     {
         _timeLeft = FailScreenSeconds;
+        _currentTimeLeftSeconds = _timeLeft;
         _gameState = GameState.FailScreen;
     }
 
@@ -385,21 +403,59 @@ public class _CanvasScript : MonoBehaviour
         _gameState = GameState.VictoryScreen;
     }
 
-    void ApplyBuffs()
-    {
-        //Not Implemented.
-        //Decrease the boss health or the timer per attack based on buff token(s) provided by the players.
-    }
-
     void ApplyDamageToBoss()
     {
-        _bossHealth -= PlayerDamagePerAttack;
+        //Get a random damage value from within the specific player attack range
+        float damage = Mathf.FloorToInt(Random.Range(
+            PlayerMinimumDamagePerAttack,
+            PlayerMaximumDamagePerAttack
+            ));
+
+        //Determine if it's a crit.
+        bool bCrit = Random.Range(0, 1) < _buffCritChance;
+        if (bCrit)
+            damage *= 2.0f;
+        
+        if (damage >= _bossHealth)
+        {
+            damage = _bossHealth;
+            _bossHealth = 0;
+        }
+        else
+        {
+            _bossHealth -= damage;
+        }
+
+        _bossScript.TakeDamage(
+            damage,
+            bCrit,
+            _bossHealth,
+            _bossStartHealth
+            );
     }
 
     void ApplyDamageToPlayer()
     {
-        _playerHealth -= BossDamagePerAttack;
-        _partyScript.TakeDamage(BossDamagePerAttack, _playerHealth, PlayerStartHealth);
+        float damage = Mathf.FloorToInt(Random.Range(
+            BossMinimumDamagePerAttack,
+            BossMaximumDamagePerAttack
+            ));
+
+        if (damage >= _playerHealth)
+        {
+            damage = _playerHealth;
+            _playerHealth = 0;
+        }
+        else
+        {
+            _playerHealth -= damage;
+        }
+
+        _partyScript.TakeDamage(
+            damage,
+            _playerHealth,
+            _playerStartHealth
+            );
     }
 
     #endregion
@@ -416,7 +472,9 @@ public class _CanvasScript : MonoBehaviour
             ShowText(true, TitleText);
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
-            ShowText(false, TimeLeftText);
+
+            TimerPanel.SetActive(false);
+
             ShowText(false, ButtonNameText);
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
@@ -438,7 +496,9 @@ public class _CanvasScript : MonoBehaviour
             UpdateBuffText();
 
             ShowText(false, GetReadyText);
-            ShowText(false, TimeLeftText);
+
+            TimerPanel.SetActive(false);
+
             ShowText(false, ButtonNameText);
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
@@ -460,12 +520,18 @@ public class _CanvasScript : MonoBehaviour
             ShowText(true, GetReadyText);
 
             //Render Timer
+            TimerPanel.SetActive(true);
             UpdateTimeLeftText();
-            ShowText(true, TimeLeftText);
+
+            //Render Player Health
+            UpdatePlayerHealthText();
+            ShowText(true, PlayerHealthText);
+
+            //Render Boss Health
+            UpdateBossHealthText();
+            ShowText(true, BossHealthText);
 
             ShowText(false, ButtonNameText);
-            ShowText(false, PlayerHealthText);
-            ShowText(false, BossHealthText);
             ShowText(false, FailText);
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
@@ -482,8 +548,8 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, GetReadyText);
 
             //Render Timer
+            TimerPanel.SetActive(true);
             UpdateTimeLeftText();
-            ShowText(true, TimeLeftText);
 
             //Render Current Active Key
             UpdateButtonNameText();
@@ -512,13 +578,11 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, TitleText);
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
-            ShowText(false, TimeLeftText);
             ShowText(false, ButtonNameText);
             ShowText(false, ButtonNameText);
 
             //Render Timer
-            UpdateTimeLeftText();
-            ShowText(true, TimeLeftText);
+            TimerPanel.SetActive(false);
 
             //Render Player Health
             UpdatePlayerHealthText();
@@ -543,13 +607,11 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, TitleText);
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
-            ShowText(false, TimeLeftText);
             ShowText(false, ButtonNameText);
             ShowText(false, ButtonNameText);
 
             //Render Timer
-            UpdateTimeLeftText();
-            ShowText(true, TimeLeftText);
+            TimerPanel.SetActive(false);
 
             //Render Player Health
             UpdatePlayerHealthText();
@@ -574,7 +636,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, TitleText);
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
-            ShowText(false, TimeLeftText);
+            TimerPanel.SetActive(false);
             ShowText(false, ButtonNameText);
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
@@ -592,7 +654,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, TitleText);
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
-            ShowText(false, TimeLeftText);
+            TimerPanel.SetActive(false);
             ShowText(false, ButtonNameText);
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
@@ -621,7 +683,7 @@ public class _CanvasScript : MonoBehaviour
 
     void UpdateTimeLeftText()
     {
-        TimeLeftText.text = _timeLeft.ToString(".000");
+        _timerPanelScript.SetTime(_timeLeft, _currentTimeLeftSeconds);
     }
 
     void UpdateButtonNameText()

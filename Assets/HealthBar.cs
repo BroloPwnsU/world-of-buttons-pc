@@ -24,7 +24,7 @@ public class HealthBar : MonoBehaviour {
             );
     }
 
-    public void TakeDamage(float damage, float newCurrentHP, float originalHP)
+    public void TakeDamage(float damage, bool bCrit, float newCurrentHP, float originalHP)
     {
         float currentScaleX = (newCurrentHP/originalHP) * _healthBarInitialScaleX;
         transform.localScale = new Vector3(

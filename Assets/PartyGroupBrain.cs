@@ -11,7 +11,7 @@ public class PartyGroupBrain : MonoBehaviour
     void Awake()
     {
         _healthBarScript = GameObject.Find("PlayerHealthBar").GetComponent<HealthBar>();
-        _damageSpriteScript = GameObject.Find("DamageSprite").GetComponent<DamageSpriteScript>();
+        _damageSpriteScript = GameObject.Find("PlayerDamageSprite").GetComponent<DamageSpriteScript>();
     }
 
     // Update is called once per frame
@@ -20,13 +20,13 @@ public class PartyGroupBrain : MonoBehaviour
 
     }
 
-    public void DealDamage(float damage)
+    public void MakeAttack(bool bCrit)
     {
     }
 
     public void TakeDamage(float damage, float newCurrentHP, float originalHP)
     {
-        _healthBarScript.TakeDamage(damage, newCurrentHP, originalHP);
+        _healthBarScript.TakeDamage(damage, false, newCurrentHP, originalHP);
 
         _damageSpriteScript.Show();
     }
