@@ -59,12 +59,15 @@ public class _CanvasScript : MonoBehaviour
     public float BuffPlayerHealthIncreasePercentPerTier;
     public float BuffCritChancePerTier;
     public float BuffNonsense;
+
+    private PartyGroupBrain _partyScript;
     #endregion
 
     // Use this for initialization
     void Start()
     {
         _gameButtonList = GetGameButtonList();
+        _partyScript = PlayerPanel.GetComponent<PartyGroupBrain>();
 
         RevertToTitleScreen();
     }
@@ -396,6 +399,7 @@ public class _CanvasScript : MonoBehaviour
     void ApplyDamageToPlayer()
     {
         _playerHealth -= BossDamagePerAttack;
+        _partyScript.TakeDamage(BossDamagePerAttack, _playerHealth, PlayerStartHealth);
     }
 
     #endregion
