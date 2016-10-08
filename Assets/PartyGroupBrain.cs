@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PartyGroupBrain : MonoBehaviour
 {
@@ -7,11 +8,15 @@ public class PartyGroupBrain : MonoBehaviour
     private HealthBar _healthBarScript;
     private DamageSpriteScript _damageSpriteScript;
 
+    private AudioSource _audioSource;
+    public List<AudioClip> AttackSounds;
+
     // Use this for initialization
     void Awake()
     {
         _healthBarScript = GameObject.Find("PlayerHealthBar").GetComponent<HealthBar>();
         _damageSpriteScript = GameObject.Find("PlayerDamageSprite").GetComponent<DamageSpriteScript>();
+        _audioSource = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -22,6 +27,10 @@ public class PartyGroupBrain : MonoBehaviour
 
     public void MakeAttack(bool bCrit)
     {
+        _audioSource.PlayOneShot(
+            AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
+            1.0f
+            );
     }
 
     public void TakeDamage(float damage, float newCurrentHP, float originalHP)

@@ -412,7 +412,7 @@ public class _CanvasScript : MonoBehaviour
             ));
 
         //Determine if it's a crit.
-        bool bCrit = Random.Range(0, 1) < _buffCritChance;
+        bool bCrit = Random.Range(0.0f, 1.0f) < _buffCritChance;
         if (bCrit)
             damage *= 2.0f;
         
@@ -425,6 +425,8 @@ public class _CanvasScript : MonoBehaviour
         {
             _bossHealth -= damage;
         }
+
+        _partyScript.MakeAttack(bCrit);
 
         _bossScript.TakeDamage(
             damage,
