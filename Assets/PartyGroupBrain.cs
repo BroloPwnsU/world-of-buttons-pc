@@ -10,6 +10,7 @@ public class PartyGroupBrain : MonoBehaviour
 
     private AudioSource _audioSource;
     public List<AudioClip> AttackSounds;
+    public List<AudioClip> CritSounds;
 
     // Use this for initialization
     void Awake()
@@ -27,10 +28,17 @@ public class PartyGroupBrain : MonoBehaviour
 
     public void MakeAttack(bool bCrit)
     {
-        _audioSource.PlayOneShot(
-            AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
-            1.0f
-            );
+        if (bCrit)
+            _audioSource.PlayOneShot(
+                AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
+                1.0f
+                );
+        else
+            _audioSource.PlayOneShot(
+                CritSounds[Random.Range(0, CritSounds.Count - 1)],
+                1.0f
+                );
+
     }
 
     public void TakeDamage(float damage, float newCurrentHP, float originalHP)

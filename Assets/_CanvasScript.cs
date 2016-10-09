@@ -453,6 +453,8 @@ public class _CanvasScript : MonoBehaviour
             _playerHealth -= damage;
         }
 
+        _bossScript.MakeAttack(false);
+
         _partyScript.TakeDamage(
             damage,
             _playerHealth,
@@ -695,12 +697,12 @@ public class _CanvasScript : MonoBehaviour
 
     void UpdatePlayerHealthText()
     {
-        PlayerHealthText.text = _playerHealth.ToString(".0");
+        PlayerHealthText.text = ((int)_playerHealth).ToString();
     }
 
     void UpdateBossHealthText()
     {
-        BossHealthText.text = _bossHealth.ToString(".0");
+        BossHealthText.text = ((int)_bossHealth).ToString();
     }
 
     #endregion
