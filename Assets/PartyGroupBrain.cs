@@ -21,6 +21,7 @@ public class PartyGroupBrain : MonoBehaviour
         _healthBarScript = gameObject.GetComponentInChildren<HealthBar>();
         _damageSpriteScript = gameObject.GetComponentInChildren<DamageSpriteScript>();
         _critSpriteScript = gameObject.GetComponentInChildren<CritSpriteScript>();
+        _audioSource = GetComponent<AudioSource>();
 
         //If we have to add multiple text boxes then we will need this script to sort through them and select the proper textbox
         Text [] textBoxes = gameObject.GetComponentsInChildren<Text>();
@@ -35,7 +36,6 @@ public class PartyGroupBrain : MonoBehaviour
                 }
             }
         }
-        _audioSource = GetComponent<AudioSource>();
     }
 
     // Update is called once per frame
@@ -49,12 +49,12 @@ public class PartyGroupBrain : MonoBehaviour
         if (bCrit)
             _audioSource.PlayOneShot(
                 AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
-                1.0f
+                0.1f
                 );
         else
             _audioSource.PlayOneShot(
                 CritSounds[Random.Range(0, CritSounds.Count - 1)],
-                1.0f
+                0.1f
                 );
     }
 

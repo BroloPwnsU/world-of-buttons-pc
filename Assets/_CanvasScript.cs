@@ -29,6 +29,8 @@ public class _CanvasScript : MonoBehaviour
     #endregion
 
     #region Public Properties
+    public GameObject MenuSelectorPrefab;
+
     public Text ButtonNameText;
     public Text SuccessText;
     public Text FailText;
@@ -42,7 +44,7 @@ public class _CanvasScript : MonoBehaviour
 
     public Text GameStateText;
 
-    public GameObject BuffPanel;
+    public GameObject OptionsPanel;
     public GameObject BossPanel;
     public GameObject PlayerPanel;
     public GameObject TimerPanel;
@@ -70,6 +72,7 @@ public class _CanvasScript : MonoBehaviour
     private PartyGroupBrain _partyScript1;
     private PartyGroupBrain _partyScript2;
     private TimerPanelBrain _timerPanelScript;
+    private BuffPanel _buffPanelScript;
     #endregion
 
     // Use this for initialization
@@ -79,6 +82,7 @@ public class _CanvasScript : MonoBehaviour
         _partyScript1 = PlayerPanel.GetComponent<PartyGroupBrain>();
         _partyScript2 = BossPanel.GetComponent<PartyGroupBrain>();
         _timerPanelScript = TimerPanel.GetComponent<TimerPanelBrain>();
+        _buffPanelScript = OptionsPanel.GetComponent<BuffPanel>();
 
         RevertToTitleScreen();
     }
@@ -257,6 +261,8 @@ public class _CanvasScript : MonoBehaviour
     {
         _gameState = GameState.OptionsScreen;
 
+        _buffPanelScript.StartOptions();
+
         //Assign some random values for now
         _bossFight = true;
         _buffIncreaseActiveTimePercent = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
@@ -276,11 +282,11 @@ public class _CanvasScript : MonoBehaviour
         //If it's a boss fight then player 2 uses the boss's stats. Otherwise it copies player 1.
         if (_bossFight)
         {
-            _party2StartHealth = _party1StartHealth;
+            _party2StartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
         }
         else
         {
-            _party2StartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
+            _party2StartHealth = _party1StartHealth;
         }
         _party2Health = _party2StartHealth;
 
@@ -518,13 +524,13 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
             BossPanel.SetActive(false);
             PlayerPanel.SetActive(false);
         }
         else if (_gameState == GameState.OptionsScreen)
         {
-            BuffPanel.SetActive(true);
+            OptionsPanel.SetActive(true);
 
             ShowText(false, TitleText);
             ShowText(true, BuffText);
@@ -542,13 +548,13 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
-            BuffPanel.SetActive(true);
+            OptionsPanel.SetActive(true);
             BossPanel.SetActive(false);
             PlayerPanel.SetActive(false);
         }
         else if (_gameState == GameState.PrepScreen)
         {
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
 
             ShowText(false, TitleText);
             ShowText(false, BuffText);
@@ -572,7 +578,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
             BossPanel.SetActive(true);
             PlayerPanel.SetActive(true);
         }
@@ -604,7 +610,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
             BossPanel.SetActive(true);
             PlayerPanel.SetActive(true);
         }
@@ -633,7 +639,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
             BossPanel.SetActive(true);
             PlayerPanel.SetActive(true);
         }
@@ -662,7 +668,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
             BossPanel.SetActive(true);
             PlayerPanel.SetActive(true);
         }
@@ -680,7 +686,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(true, YouLoseText);
             ShowText(false, YouWinText);
 
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
             BossPanel.SetActive(false);
             PlayerPanel.SetActive(false);
         }
@@ -698,7 +704,7 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(true, YouWinText);
 
-            BuffPanel.SetActive(false);
+            OptionsPanel.SetActive(false);
             BossPanel.SetActive(false);
             PlayerPanel.SetActive(false);
         }
