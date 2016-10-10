@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿/*
+using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -7,15 +8,18 @@ public class BossBrain : MonoBehaviour
     //There is a component called...
     private HealthBar _healthBarScript;
     private DamageSpriteScript _damageSpriteScript;
+    private CritSpriteScript _critSpriteScript;
 
     private AudioSource _audioSource;
     public List<AudioClip> AttackSounds;
+    public List<AudioClip> CritSounds;
 
     // Use this for initialization
     void Awake()
     {
         _healthBarScript = GameObject.Find("BossHealthBar").GetComponent<HealthBar>();
         _damageSpriteScript = GameObject.Find("BossDamageSprite").GetComponent<DamageSpriteScript>();
+        _critSpriteScript = GameObject.Find("BossCritSprite").GetComponent<DamageSpriteScript>();
         _audioSource = GetComponent<AudioSource>();
     }
 
@@ -41,3 +45,4 @@ public class BossBrain : MonoBehaviour
         _damageSpriteScript.Show();
     }
 }
+*/

@@ -15,15 +15,17 @@ public class _CanvasScript : MonoBehaviour
     private List<GameButton> _gameButtonList;
 
     private GameState _gameState;
-    private float _bossHealth;
-    private float _bossStartHealth;
-    private float _playerHealth;
-    private float _playerStartHealth;
+    private bool _bossFight = true;
+    private float _party1Health;
+    private float _party1StartHealth;
+    private float _party2Health;
+    private float _party2StartHealth;
+    private float _buffParty1CritChance = 0;
+    private float _buffParty2CritChance = 0;
     private float _buffIncreaseActiveTimeMultiplier = 1;
     private float _buffIncreaseActiveTimePercent = 0;
     private float _buffDecreaseBossHealthPercent = 0;
     private float _buffIncreasePlayerHealthPercent = 0;
-    private float _buffCritChance = 0;
     #endregion
 
     #region Public Properties
@@ -65,8 +67,8 @@ public class _CanvasScript : MonoBehaviour
     public float BuffCritChancePerTier;
     public float BuffNonsense;
 
-    private PartyGroupBrain _partyScript;
-    private BossBrain _bossScript;
+    private PartyGroupBrain _partyScript1;
+    private PartyGroupBrain _partyScript2;
     private TimerPanelBrain _timerPanelScript;
     #endregion
 
@@ -74,8 +76,8 @@ public class _CanvasScript : MonoBehaviour
     void Start()
     {
         _gameButtonList = GetGameButtonList();
-        _bossScript = BossPanel.GetComponent<BossBrain>();
-        _partyScript = PlayerPanel.GetComponent<PartyGroupBrain>();
+        _partyScript1 = PlayerPanel.GetComponent<PartyGroupBrain>();
+        _partyScript2 = BossPanel.GetComponent<PartyGroupBrain>();
         _timerPanelScript = TimerPanel.GetComponent<TimerPanelBrain>();
 
         RevertToTitleScreen();
@@ -108,15 +110,15 @@ public class _CanvasScript : MonoBehaviour
 
             #endregion
         }
-        else if (_gameState == GameState.BuffScreen)
+        else if (_gameState == GameState.OptionsScreen)
         {
-            #region Buff - Admin enters applicable buffs
+            #region Options - Admin choses game mode
 
             //Players are not allowed to do anything during this period.
             //Since they don't have anything to do, we will just wait for the enter key to be pressed.
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             {
-                EndBuffScreen();
+                EndOptionsScreen();
             }
 
             ///NOT IMPLEMENTED
@@ -146,12 +148,12 @@ public class _CanvasScript : MonoBehaviour
             if (Input.GetKeyDown(_currentButton.Key))
             {
                 //They pressed the correct button. That means success.
-                PlayerInputSuccess();
+                Player1InputSuccess();
             }
             else if (Input.anyKeyDown)
             {
                 //Somebody is pressing a button but it's not the right button.
-                PlayerInputFailByButtonPress();
+                Player1InputFailByButtonPress();
             }
             else
             {
@@ -159,7 +161,7 @@ public class _CanvasScript : MonoBehaviour
                 _timeLeft -= Time.deltaTime;
                 if (_timeLeft < 0)
                 {
-                    PlayerInputFailByTime();
+                    Player1InputFailByTime();
                 }
             }
 
@@ -229,8 +231,8 @@ public class _CanvasScript : MonoBehaviour
 
     void ResetGameValues()
     {
-        _bossHealth = BossStartHealth;
-        _playerHealth = PlayerStartHealth;
+        _party1Health = 0.0f;
+        _party2Health = 0.0f;
         _completedCycles = 0;
         _timeLeft = 0.0f;
         _currentTimeLeftSeconds = 0.0f;
@@ -248,28 +250,39 @@ public class _CanvasScript : MonoBehaviour
 
     void StartGame()
     {
-        StartBuffScreen();
+        StartOptionsScreen();
     }
 
-    void StartBuffScreen()
+    void StartOptionsScreen()
     {
-        _gameState = GameState.BuffScreen;
+        _gameState = GameState.OptionsScreen;
 
         //Assign some random values for now
+        _bossFight = true;
         _buffIncreaseActiveTimePercent = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
         _buffIncreaseActiveTimeMultiplier = 1 + _buffIncreaseActiveTimePercent;
         _buffDecreaseBossHealthPercent = Random.Range(0, 5) * (0.01f * BuffBossHealthDecreasePercentPerTier);
         _buffIncreasePlayerHealthPercent = Random.Range(0, 5) * (0.01f * BuffPlayerHealthIncreasePercentPerTier);
-        _buffCritChance = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
+        _buffParty1CritChance = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
+        _buffParty2CritChance = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
     }
 
-    void EndBuffScreen()
+    void EndOptionsScreen()
     {
         //Apply health buffs/debuffs to starting health meters
-        _playerStartHealth = PlayerStartHealth * (1 + _buffIncreasePlayerHealthPercent);
-        _playerHealth = _playerStartHealth;
-        _bossStartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
-        _bossHealth = _bossStartHealth;
+        _party1StartHealth = PlayerStartHealth * (1 + _buffIncreasePlayerHealthPercent);
+        _party1Health = _party1StartHealth;
+        
+        //If it's a boss fight then player 2 uses the boss's stats. Otherwise it copies player 1.
+        if (_bossFight)
+        {
+            _party2StartHealth = _party1StartHealth;
+        }
+        else
+        {
+            _party2StartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
+        }
+        _party2Health = _party2StartHealth;
 
         //Skip to prep screen
         BeginPrepScreen();
@@ -328,23 +341,23 @@ public class _CanvasScript : MonoBehaviour
         _completedCycles++;
     }
 
-    void PlayerInputFailByButtonPress()
+    void Player1InputFailByButtonPress()
     {
         //Incorrect button presses result in damage
-        ApplyDamageToPlayer();
+        ApplyDamageToParty1();
         BeginFailScreen();
     }
 
-    void PlayerInputFailByTime()
+    void Player1InputFailByTime()
     {
         //TEMPORARY: Later in development we will not be assigning damage for timeouts.
-        ApplyDamageToPlayer();
+        ApplyDamageToParty1();
         BeginFailScreen();
     }
 
-    void PlayerInputSuccess()
+    void Player1InputSuccess()
     {
-        ApplyDamageToBoss();
+        ApplyDamageToParty2();
         BeginSuccessScreen();
     }
 
@@ -360,7 +373,7 @@ public class _CanvasScript : MonoBehaviour
     {
         //Some damage may have occurred against the boss during a success action.
         //Check to see if the boss died.
-        if (_bossHealth <= 0)
+        if (_party2Health <= 0)
         {
             EndGameAsVictory();
         }
@@ -382,7 +395,7 @@ public class _CanvasScript : MonoBehaviour
     {
         //Some damage may have occurred against the user during a fail action.
         //Check to see if the player died.
-        if (_playerHealth <= 0)
+        if (_party1Health <= 0)
         {
             EndGameAsDefeat();
         }
@@ -403,63 +416,81 @@ public class _CanvasScript : MonoBehaviour
         _gameState = GameState.VictoryScreen;
     }
 
-    void ApplyDamageToBoss()
+    void ApplyDamageToParty1()
     {
-        //Get a random damage value from within the specific player attack range
-        float damage = Mathf.FloorToInt(Random.Range(
-            PlayerMinimumDamagePerAttack,
-            PlayerMaximumDamagePerAttack
-            ));
-
-        //Determine if it's a crit.
-        bool bCrit = Random.Range(0.0f, 1.0f) < _buffCritChance;
-        if (bCrit)
-            damage *= 2.0f;
-        
-        if (damage >= _bossHealth)
+        if (_bossFight)
         {
-            damage = _bossHealth;
-            _bossHealth = 0;
+            _party1Health = ApplyDamage(
+                _party1Health,
+                _party1StartHealth,
+                BossMinimumDamagePerAttack,
+                BossMaximumDamagePerAttack,
+                0.0f,
+                _partyScript2,
+                _partyScript1
+                );
         }
         else
         {
-            _bossHealth -= damage;
+            _party1Health = ApplyDamage(
+                _party1Health,
+                _party1StartHealth,
+                PlayerMinimumDamagePerAttack,
+                PlayerMaximumDamagePerAttack,
+                _buffParty2CritChance,
+                _partyScript2,
+                _partyScript1
+                );
         }
+    }
 
-        _partyScript.MakeAttack(bCrit);
-
-        _bossScript.TakeDamage(
-            damage,
-            bCrit,
-            _bossHealth,
-            _bossStartHealth
+    void ApplyDamageToParty2()
+    {
+        _party2Health = ApplyDamage(
+            _party2Health,
+            _party2StartHealth,
+            PlayerMinimumDamagePerAttack,
+            PlayerMaximumDamagePerAttack,
+            _buffParty1CritChance,
+            _partyScript1,
+            _partyScript2
             );
     }
 
-    void ApplyDamageToPlayer()
+    private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroupBrain partyScriptAttack, PartyGroupBrain partyScriptDefend)
     {
+        //Get a random damage value from within the specific player attack range
         float damage = Mathf.FloorToInt(Random.Range(
-            BossMinimumDamagePerAttack,
-            BossMaximumDamagePerAttack
+            minimumDamage,
+            maximumDamage
             ));
 
-        if (damage >= _playerHealth)
+        //Determine if it's a crit.
+        bool bCrit = Random.Range(0.0f, 1.0f) < critPercent;
+        if (bCrit)
+            damage *= 2.0f;
+
+        float newHealth = currentHealth;
+        if (damage >= currentHealth)
         {
-            damage = _playerHealth;
-            _playerHealth = 0;
+            damage = currentHealth;
+            newHealth = 0;
         }
         else
         {
-            _playerHealth -= damage;
+            newHealth -= damage;
         }
 
-        _bossScript.MakeAttack(false);
+        partyScriptAttack.MakeAttack(bCrit);
 
-        _partyScript.TakeDamage(
+        partyScriptDefend.TakeDamage(
             damage,
-            _playerHealth,
-            _playerStartHealth
+            newHealth,
+            startHealth,
+            bCrit
             );
+
+        return newHealth;
     }
 
     #endregion
@@ -491,7 +522,7 @@ public class _CanvasScript : MonoBehaviour
             BossPanel.SetActive(false);
             PlayerPanel.SetActive(false);
         }
-        else if (_gameState == GameState.BuffScreen)
+        else if (_gameState == GameState.OptionsScreen)
         {
             BuffPanel.SetActive(true);
 
@@ -676,12 +707,13 @@ public class _CanvasScript : MonoBehaviour
     void UpdateBuffText()
     {
         BuffText.text = string.Format(
-            "Active Buffs{0}{0}Boss Health: -{1}%{0}Player Health: +{2}%{0}Time Increase: +{3}%{0}Crit Chance: {4}%",
+            "Active Buffs{0}{0}Boss Health: -{1}%{0}Player Health: +{2}%{0}Time Increase: +{3}%{0}Party 1 Crit: {4}%{0}Party 2 Crit: {4}%",
             "\r\n",
             ((int)(100 * _buffDecreaseBossHealthPercent)).ToString(),
             ((int)(100 * _buffIncreasePlayerHealthPercent)).ToString(),
             ((int)(100 * _buffIncreaseActiveTimePercent)).ToString(),
-            ((int)(100 * _buffCritChance)).ToString()
+            ((int)(100 * _buffParty1CritChance)).ToString(),
+            ((int)(100 * _buffParty2CritChance)).ToString()
             );
     }
 
@@ -697,12 +729,12 @@ public class _CanvasScript : MonoBehaviour
 
     void UpdatePlayerHealthText()
     {
-        PlayerHealthText.text = ((int)_playerHealth).ToString();
+        PlayerHealthText.text = ((int)_party1Health).ToString();
     }
 
     void UpdateBossHealthText()
     {
-        BossHealthText.text = ((int)_bossHealth).ToString();
+        BossHealthText.text = ((int)_party2Health).ToString();
     }
 
     #endregion
@@ -802,7 +834,7 @@ public class _CanvasScript : MonoBehaviour
     enum GameState
     {
         TitleScreen,
-        BuffScreen,
+        OptionsScreen,
         PrepScreen,
         FailScreen,
         SuccessScreen,
