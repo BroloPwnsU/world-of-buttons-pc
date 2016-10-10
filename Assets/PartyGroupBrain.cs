@@ -15,6 +15,10 @@ public class PartyGroupBrain : MonoBehaviour
     public List<AudioClip> AttackSounds;
     public List<AudioClip> CritSounds;
 
+    public bool IsPVE = true;
+    public GameObject PVESpritePanel;
+    public GameObject PVPSpritePanel;
+
     // Use this for initialization
     void Awake()
     {

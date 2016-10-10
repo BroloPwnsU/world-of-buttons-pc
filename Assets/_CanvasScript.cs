@@ -770,7 +770,12 @@ public class _CanvasScript : MonoBehaviour
 
     #region Game Button Definition
 
-    List<GameButton> GetGameButtonList()
+    private List<GameButton> _player1Buttons;
+    private List<GameButton> _player2Buttons;
+    private List<GameButton> _player3Buttons;
+    private List<GameButton> _player4Buttons;
+
+    List<GameButton> GetPlayer1Buttons()
     {
         List<GameButton> gbList = new List<GameButton>();
 
@@ -785,6 +790,13 @@ public class _CanvasScript : MonoBehaviour
         gbList.Add(new GameButton(KeyCode.I, "Remove Splinter"));
         gbList.Add(new GameButton(KeyCode.J, "Aggrevate Old Groin Injury"));
 
+        return gbList;
+    }
+
+    List<GameButton> GetPlayer2Buttons()
+    {
+        List<GameButton> gbList = new List<GameButton>();
+
         gbList.Add(new GameButton(KeyCode.K, "Get Good"));
         gbList.Add(new GameButton(KeyCode.L, "Wreck Shop"));
         gbList.Add(new GameButton(KeyCode.M, "Invite Criticism"));
@@ -796,6 +808,13 @@ public class _CanvasScript : MonoBehaviour
         gbList.Add(new GameButton(KeyCode.S, "Press Alt + F4"));
         gbList.Add(new GameButton(KeyCode.T, "Heal Through The Damage"));
 
+        return gbList;
+    }
+
+    List<GameButton> GetPlayer3Buttons()
+    {
+        List<GameButton> gbList = new List<GameButton>();
+
         gbList.Add(new GameButton(KeyCode.U, "Rage Quietly"));
         gbList.Add(new GameButton(KeyCode.V, "Download DLC"));
         gbList.Add(new GameButton(KeyCode.W, "Cheat"));
@@ -806,6 +825,13 @@ public class _CanvasScript : MonoBehaviour
         gbList.Add(new GameButton(KeyCode.RightBracket, "Fire da Lazzzooor"));
         gbList.Add(new GameButton(KeyCode.LeftParen, "Gank Top"));
         gbList.Add(new GameButton(KeyCode.RightParen, "Roll Need"));
+
+        return gbList;
+    }
+
+    List<GameButton> GetPlayer4Buttons()
+    {
+        List<GameButton> gbList = new List<GameButton>();
 
         gbList.Add(new GameButton(KeyCode.Alpha0, "Uninstall (Noob)"));
         gbList.Add(new GameButton(KeyCode.Alpha1, "Spend Real Money in the Item Shop"));

@@ -12,8 +12,8 @@ public class BuffPanel : MonoBehaviour {
     public Text OptionsHeaderText;
     public GameObject _menuSelectorPrefab;
 
-	// Use this for initialization
-	void Awake ()
+    // Use this for initialization
+    void Awake ()
     {
         _audioSource = GetComponent<AudioSource>();
 	}
