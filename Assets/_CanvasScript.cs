@@ -103,6 +103,15 @@ public class _CanvasScript : MonoBehaviour
 
     void Update()
     {
+        if (Input.anyKeyDown)
+        {
+            foreach (KeyCode kcode in System.Enum.GetValues(typeof(KeyCode)))
+            {
+                if (Input.GetKeyDown(kcode))
+                    Debug.Log("KeyCode down: " + kcode);
+            }
+        }
+
         //If at any time they hit the escape key it goes back to the title screen.
         // This doesn't care about current game state.
         if (Input.GetKeyDown(KeyCode.Minus))
@@ -158,41 +167,7 @@ public class _CanvasScript : MonoBehaviour
         }
         else if (_gameState == GameState.ActiveScreen)
         {
-            #region Active - Players are prompted for a button press.
-
-            ///Active state means we're waiting for the player to press a button. They are under a time limit.
-            if (!_bossFight && Input.GetKeyDown(_party1CurrentButton.Key) && Input.GetKeyDown(_party2CurrentButton.Key))
-            {
-                //If both players pressed at the same time... wow! It's a tie! Do something?
-                PartyInputTie();
-            }
-            else if (Input.GetKeyDown(_party1CurrentButton.Key))
-            {
-                //They pressed the correct button. That means success.
-                Party1InputSuccess();
-            }
-            else if (!_bossFight && Input.GetKeyDown(_party2CurrentButton.Key))
-            {
-                //They pressed the correct button. That means success.
-                Party2InputSuccess();
-            }
-            else if (Input.anyKeyDown)
-            {
-                //Somebody is pressing a button but it's not the right button.
-                //It could be either player, but we gotta figure out who screwed up.
-                FailByButtonPress();
-            }
-            else
-            {
-                //If we're currently active, and we have not received a keypress, then we make sure they are within the time limit.
-                _timeLeft -= Time.deltaTime;
-                if (_timeLeft < 0)
-                {
-                    FailByTimeElapsed();
-                }
-            }
-
-            #endregion
+            ReadActiveInput();
         }
         else if (_gameState == GameState.SuccessScreen)
         {
@@ -463,8 +438,109 @@ public class _CanvasScript : MonoBehaviour
         } 
     }
 
+    private List<KeyCode> numberKeys = new List<KeyCode>()
+    {
+        KeyCode.JoystickButton1,
+        KeyCode.JoystickButton2,
+        KeyCode.JoystickButton3,
+        KeyCode.JoystickButton4,
+        KeyCode.JoystickButton5,
+        KeyCode.JoystickButton6,
+        KeyCode.JoystickButton7,
+        KeyCode.JoystickButton8,
+        KeyCode.JoystickButton9,
+        KeyCode.JoystickButton10,
+    };
+
+    private List<KeyCode> letterKeys = new List<KeyCode>()
+    {
+        KeyCode.A,
+        KeyCode.B,
+        KeyCode.C,
+        KeyCode.D
+    };
+
+    void ReadActiveInput()
+    {
+        //First thing's first: read all the active button presses. Each joystick button will be represented
+        // by TWO or MORE unique keypress events. We want to register two of them and cross reference to figure
+        // out exactly which key belonging to which player was actually pressed.
+        //If any duplicate letters or numbers, it's a tie. If the letters are on opposite teams, then no
+        // damage is assigned. If they are on the same team, then damage is assigned.
+        // Ties are very unlikely.
+
+        List<KeyCode> numberKeysPressed = new List<KeyCode>();
+        foreach (KeyCode numberKey in numberKeys)
+        {
+            //Check all possible joystick number keys to look for multiple presses.
+            if (Input.GetKeyDown(numberKey))
+            {
+                //Someone pressed a joystick key!
+                numberKeysPressed.Add(numberKey);
+            }
+        }
+
+        List<KeyCode> letterKeysPressed = new List<KeyCode>();
+        foreach (KeyCode letterKey in letterKeys)
+        {
+            //Check all possible letter keys to look for multiple presses.
+            if (Input.GetKeyDown(letterKey))
+            {
+                //Someone pressed a joystick key!
+                letterKeysPressed.Add(letterKey);
+            }
+        }
+
+        if (letterKeysPressed.Count > 0 && numberKeysPressed.Count > 0)
+        {
+            //Somebody pressed at least one joystick key. Oh joy!
+        }
+
+
+        ///Active state means we're waiting for the player to press a button. They are under a time limit.
+        if (!_bossFight && Input.GetKeyDown(_party1CurrentButton.Key) && Input.GetKeyDown(_party2CurrentButton.Key))
+        {
+            //If both players pressed at the same time... wow! It's a tie! Do something?
+            PartyInputTie();
+        }
+        else if (Input.GetKeyDown(_party1CurrentButton.Key))
+        {
+            //They pressed the correct button. That means success.
+            Party1InputSuccess();
+        }
+        else if (!_bossFight && Input.GetKeyDown(_party2CurrentButton.Key))
+        {
+            //They pressed the correct button. That means success.
+            Party2InputSuccess();
+        }
+        else if (Input.anyKeyDown)
+        {
+            //Somebody is pressing a button but it's not the right button.
+            //It could be either player, but we gotta figure out who screwed up.
+            FailByButtonPress();
+        }
+        else
+        {
+            //If we're currently active, and we have not received a keypress, then we make sure they are within the time limit.
+            _timeLeft -= Time.deltaTime;
+            if (_timeLeft < 0)
+            {
+                FailByTimeElapsed();
+            }
+        }
+    }
+
     void FailByButtonPress()
     {
+        foreach (GameButton gb in _party1ActiveButtons)
+        {
+            if (Input.GetKeyDown(gb.Key))
+            {
+                //Party1InputFailByButtonPress();
+                Debug.Log(gb.Key);
+            }
+        }
+
         //First need to figure out which party fucked up
         if (_bossFight)
         {
@@ -947,12 +1023,12 @@ public class _CanvasScript : MonoBehaviour
     void UpdateButtonNameText()
     {
         //Always show player 1 button commands
-        Party1ButtonNameText.text = _party1CurrentButton.Name + " - " + _party1CurrentButton.Key.ToString();
+        Party1ButtonNameText.text = _party1CurrentButton.Name; // + " - " + _party1CurrentButton.Key.ToString();
 
         if (!_bossFight)
         {
             //If PVP, Show both button commands
-            Party2ButtonNameText.text = _party2CurrentButton.Name + " - " + _party2CurrentButton.Key.ToString();
+            Party2ButtonNameText.text = _party2CurrentButton.Name; // + " - " + _party2CurrentButton.Key.ToString();
         }
     }
 
@@ -1008,10 +1084,10 @@ public class _CanvasScript : MonoBehaviour
         if (_bossFight)
         {
             //Boss fight combines all the buttons.
-            _party1ActiveButtons.AddRange(_player1Buttons);
-            _party1ActiveButtons.AddRange(_player2Buttons);
+            //_party1ActiveButtons.AddRange(_player1Buttons);
+            //_party1ActiveButtons.AddRange(_player2Buttons);
             _party1ActiveButtons.AddRange(_player3Buttons);
-            _party1ActiveButtons.AddRange(_player4Buttons);
+           // _party1ActiveButtons.AddRange(_player4Buttons);
 
             //Leave Party2ActiveButtons empty, because there is no party 2. Boss is AI!
         }
@@ -1028,86 +1104,99 @@ public class _CanvasScript : MonoBehaviour
         }
     }
 
-    List<GameButton> GetPlayer1Buttons()
+    List<GameButton> BuildButtonList(Dictionary<string, KeyCode> keyMapping)
     {
         List<GameButton> gbList = new List<GameButton>();
 
-        gbList.Add(new GameButton(KeyCode.A, "Kill With Fire"));
-        gbList.Add(new GameButton(KeyCode.B, "Turn Off and Back On"));
-        gbList.Add(new GameButton(KeyCode.C, "360 No Scope"));
-        gbList.Add(new GameButton(KeyCode.D, "Tank and Spank"));
-        gbList.Add(new GameButton(KeyCode.E, "Falcon Punch!"));
-        gbList.Add(new GameButton(KeyCode.F, "Overcook the Roast"));
-        gbList.Add(new GameButton(KeyCode.G, "Put Gum in Hair"));
-        gbList.Add(new GameButton(KeyCode.H, "Spray and Pray"));
-        gbList.Add(new GameButton(KeyCode.I, "Aggrevate Old Tap-Dancing Injury"));
-        gbList.Add(new GameButton(KeyCode.J, "Flying Groin Stomp"));
+        foreach (string sKey in keyMapping.Keys)
+        {
+            gbList.Add(new GameButton(
+                keyMapping[sKey],
+                sKey
+                ));
+        }
 
         return gbList;
+    }
+
+    //Argue over spelling
+
+    List<GameButton> GetPlayer1Buttons()
+    {
+        return BuildButtonList(new Dictionary<string, KeyCode>()
+        {
+            { "Kill With Fire", KeyCode.JoystickButton10 },
+            { "Turn Off and Back On", KeyCode.JoystickButton9 },
+            { "360 No Scope", KeyCode.JoystickButton8 },
+            { "Tank and Spank", KeyCode.JoystickButton4 },
+            { "Falcon Punch!", KeyCode.JoystickButton5 },
+            { "Overcook the Roast", KeyCode.JoystickButton6 },
+            { "Put Gum In Hair", KeyCode.JoystickButton7 },
+            { "Spray and Pray", KeyCode.JoystickButton3 },
+            { "Aggrevate Old Tap-Dancing Injury", KeyCode.JoystickButton2 },
+            { "Flying Groin Stomp", KeyCode.JoystickButton1 },
+        });
     }
 
     List<GameButton> GetPlayer2Buttons()
     {
-        List<GameButton> gbList = new List<GameButton>();
-
-        gbList.Add(new GameButton(KeyCode.K, "Flail Wildly"));
-        gbList.Add(new GameButton(KeyCode.L, "Charge-a Your Laser"));
-        gbList.Add(new GameButton(KeyCode.M, "Don't Send Christmas Card"));
-        gbList.Add(new GameButton(KeyCode.N, "Spin to Win"));
-        gbList.Add(new GameButton(KeyCode.O, "420 Blazem"));
-        gbList.Add(new GameButton(KeyCode.P, "Kill with Kindness"));
-        gbList.Add(new GameButton(KeyCode.Q, "Give Just One Chip"));
-        gbList.Add(new GameButton(KeyCode.R, "Run in Circles"));
-        gbList.Add(new GameButton(KeyCode.S, "Press Alt + F4"));
-        gbList.Add(new GameButton(KeyCode.T, "Fap Quietly to Food Network"));
-
-        return gbList;
+        return BuildButtonList(new Dictionary<string, KeyCode>()
+        {
+            { "Flail Wildly", KeyCode.JoystickButton10 },
+            { "Tiger's Claw Grasps the Pearls", KeyCode.JoystickButton9 },
+            { "Kill with Kindness", KeyCode.JoystickButton8 },
+            { "Run in Circles", KeyCode.JoystickButton7 },
+            { "Fap Quietly to Food Network", KeyCode.JoystickButton6 },
+            { "Don't Touch Anything", KeyCode.JoystickButton5 },
+            { "Don't Send Xmas Card", KeyCode.JoystickButton4 },
+            { "Wet Willy", KeyCode.JoystickButton3 },
+            { "Press Alt + F4", KeyCode.JoystickButton2 },
+            { "Scratch Their Bieber CDs", KeyCode.JoystickButton1 },
+        });
     }
 
     List<GameButton> GetPlayer3Buttons()
     {
-        List<GameButton> gbList = new List<GameButton>();
-
-        gbList.Add(new GameButton(KeyCode.U, "Rage Quietly"));
-        gbList.Add(new GameButton(KeyCode.V, "Download DLC"));
-        gbList.Add(new GameButton(KeyCode.W, "Cheat"));
-        gbList.Add(new GameButton(KeyCode.X, "Kill the Messenger"));
-        gbList.Add(new GameButton(KeyCode.Y, "Grab Pitchfork"));
-        gbList.Add(new GameButton(KeyCode.Z, "Jump on the Bandwagon"));
-        gbList.Add(new GameButton(KeyCode.LeftBracket, "Smoke (If you got em)"));
-        gbList.Add(new GameButton(KeyCode.RightBracket, "Fire da Lazzzooor"));
-        gbList.Add(new GameButton(KeyCode.Comma, "Gank Top"));
-        gbList.Add(new GameButton(KeyCode.Period, "Roll Need"));
-
-        return gbList;
+        return BuildButtonList(new Dictionary<string, KeyCode>()
+        {
+            { "Execute", KeyCode.JoystickButton1 },
+            { "Eye Gouge", KeyCode.JoystickButton2 },
+            { "Long Distance Expectoration", KeyCode.JoystickButton3 }, //Especially Good Expectoration
+            { "Fake High Five", KeyCode.JoystickButton4 },
+            { "Release the Kraken", KeyCode.JoystickButton5 },
+            { "Sweep the Leg", KeyCode.JoystickButton6 },
+            { "Camp Spawn", KeyCode.JoystickButton7 },
+            { "420 Blaze 'Em", KeyCode.JoystickButton8 },
+            { "Shit Self", KeyCode.JoystickButton9 },
+            { "Spin to Win", KeyCode.JoystickButton10 },
+        });
     }
 
     List<GameButton> GetPlayer4Buttons()
     {
-        List<GameButton> gbList = new List<GameButton>();
-
-        gbList.Add(new GameButton(KeyCode.Alpha0, "Uninstall (Noob)"));
-        gbList.Add(new GameButton(KeyCode.Alpha1, "Spend Real Money in the Item Shop"));
-        gbList.Add(new GameButton(KeyCode.Alpha2, "Crush Candy"));
-        gbList.Add(new GameButton(KeyCode.Alpha3, "Play a Casual Game"));
-        gbList.Add(new GameButton(KeyCode.Alpha4, "Disenchant Legendary Item"));
-        gbList.Add(new GameButton(KeyCode.Alpha5, "Lightning Bolt!"));
-        gbList.Add(new GameButton(KeyCode.Alpha6, "Steal the Schnitzel"));
-        gbList.Add(new GameButton(KeyCode.Alpha7, "Do a Cock Pushup"));
-        gbList.Add(new GameButton(KeyCode.Alpha8, "Walk Slowly on the Beach"));
-        gbList.Add(new GameButton(KeyCode.Alpha9, "Turn it up to 11"));
-
-        return gbList;
+        return BuildButtonList(new Dictionary<string, KeyCode>()
+        {
+            { "Smoke (If you got 'em)", KeyCode.JoystickButton4 },
+            { "Fire da Lazzzoorrr!!!", KeyCode.JoystickButton3 },
+            { "Call Tech Support", KeyCode.JoystickButton2 },
+            { "Grab Pitchfork!", KeyCode.JoystickButton1 },
+            { "Cheat", KeyCode.JoystickButton5 },
+            { "Rage Silently", KeyCode.JoystickButton6 },
+            { "Disenchant Legendary", KeyCode.JoystickButton10 },
+            { "Farm Jungle", KeyCode.JoystickButton9 },
+            { "Spinning Neck Chop", KeyCode.JoystickButton8 },
+            { "Kill the Messenger", KeyCode.JoystickButton7 },
+        });
     }
 
     GameButton GetParty1DummyButton()
     {
-        return new GameButton(KeyCode.Semicolon, "Party 1 Dummy");
+        return new GameButton(KeyCode.RightBracket, "Party 1 Dummy");
     }
 
     GameButton GetParty2DummyButton()
     {
-        return new GameButton(KeyCode.Slash, "Party 2 Dummy");
+        return new GameButton(KeyCode.LeftBracket, "Party 2 Dummy");
     }
 
     List<GameButton> GetParty1Buttons()
@@ -1161,4 +1250,5 @@ public class _CanvasScript : MonoBehaviour
     }
 
     #endregion
+    
 }
