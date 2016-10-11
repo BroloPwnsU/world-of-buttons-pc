@@ -10,9 +10,20 @@ public class _CanvasScript : MonoBehaviour
     private float _currentTimeLeftSeconds;
     private float _currentActivePeriodSeconds;
     private int _completedCycles;
-    private GameButton _currentButton;
 
-    private List<GameButton> _gameButtonList;
+
+    private List<GameButton> _player1Buttons;
+    private List<GameButton> _player2Buttons;
+    private List<GameButton> _player3Buttons;
+    private List<GameButton> _player4Buttons;
+    private GameButton _party1DummyButton;
+    private GameButton _party2DummyButton;
+    private GameButton _party1CurrentButton;
+    private GameButton _party1PreviousButton;
+    private GameButton _party2CurrentButton;
+    private GameButton _party2PreviousButton;
+    private List<GameButton> _party1ActiveButtons;
+    private List<GameButton> _party2ActiveButtons;
 
     private GameState _gameState;
     private bool _bossFight = true;
@@ -31,7 +42,8 @@ public class _CanvasScript : MonoBehaviour
     #region Public Properties
     public GameObject MenuSelectorPrefab;
 
-    public Text ButtonNameText;
+    public Text Party1ButtonNameText;
+    public Text Party2ButtonNameText;
     public Text SuccessText;
     public Text FailText;
     public Text TitleText;
@@ -78,7 +90,7 @@ public class _CanvasScript : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        _gameButtonList = GetGameButtonList();
+        //_gameButtonList = GetGameButtonList();
         _partyScript1 = PlayerPanel.GetComponent<PartyGroupBrain>();
         _partyScript2 = BossPanel.GetComponent<PartyGroupBrain>();
         _timerPanelScript = TimerPanel.GetComponent<TimerPanelBrain>();
@@ -149,15 +161,26 @@ public class _CanvasScript : MonoBehaviour
             #region Active - Players are prompted for a button press.
 
             ///Active state means we're waiting for the player to press a button. They are under a time limit.
-            if (Input.GetKeyDown(_currentButton.Key))
+            if (!_bossFight && Input.GetKeyDown(_party1CurrentButton.Key) && Input.GetKeyDown(_party2CurrentButton.Key))
+            {
+                //If both players pressed at the same time... wow! It's a tie! Do something?
+                PartyInputTie();
+            }
+            else if (Input.GetKeyDown(_party1CurrentButton.Key))
             {
                 //They pressed the correct button. That means success.
-                Player1InputSuccess();
+                Party1InputSuccess();
+            }
+            else if (!_bossFight && Input.GetKeyDown(_party2CurrentButton.Key))
+            {
+                //They pressed the correct button. That means success.
+                Party2InputSuccess();
             }
             else if (Input.anyKeyDown)
             {
                 //Somebody is pressing a button but it's not the right button.
-                Player1InputFailByButtonPress();
+                //It could be either player, but we gotta figure out who screwed up.
+                FailByButtonPress();
             }
             else
             {
@@ -165,7 +188,7 @@ public class _CanvasScript : MonoBehaviour
                 _timeLeft -= Time.deltaTime;
                 if (_timeLeft < 0)
                 {
-                    Player1InputFailByTime();
+                    FailByTimeElapsed();
                 }
             }
 
@@ -240,10 +263,25 @@ public class _CanvasScript : MonoBehaviour
         _completedCycles = 0;
         _timeLeft = 0.0f;
         _currentTimeLeftSeconds = 0.0f;
+        
+        _player1Buttons = null;
+        _player2Buttons = null;
+        _player3Buttons = null;
+        _player4Buttons = null;
+        _party1DummyButton = null;
+        _party2DummyButton = null;
+        _party1CurrentButton = null;
+        _party1PreviousButton = null;
+        _party2CurrentButton = null;
+        _party2PreviousButton = null;
+        _party1ActiveButtons = null;
+        _party2ActiveButtons = null;
+
+        SetupButtons();
     }
 
     #endregion
-
+    
     #region Game Logic
 
     void RevertToTitleScreen()
@@ -261,7 +299,7 @@ public class _CanvasScript : MonoBehaviour
     {
         _gameState = GameState.OptionsScreen;
 
-        _buffPanelScript.StartOptions();
+        _buffPanelScript.StartOptions(GetOptionsSettings());
 
         //Assign some random values for now
         _bossFight = true;
@@ -273,8 +311,68 @@ public class _CanvasScript : MonoBehaviour
         _buffParty2CritChance = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
     }
 
+    private string OPTION_MENU_MODE = "MODE";
+    private string OPTION_MENU_MODE_VALUE_BOSS = "BOSS BATTLE";
+    private string OPTION_MENU_MODE_VALUE_PVP = "PVP";
+    private string OPTION_MENU_CRIT_CHANCE = "CRIT CHANCE";
+
+    OptionPanelSettings GetOptionsSettings()
+    {
+        List<OptionMenu> bmList = new List<OptionMenu>();
+
+        List<string> modeValues = new List<string>()
+        {
+            OPTION_MENU_MODE_VALUE_BOSS,
+            OPTION_MENU_MODE_VALUE_PVP
+        };
+        OptionMenu bmMode = new OptionMenu(
+            OPTION_MENU_MODE,
+            modeValues.ToArray(),
+            modeValues[0]
+            );
+
+        bmList.Add(bmMode);
+
+        List<string> critValues = new List<string>()
+        {
+            "5%",
+            "10%",
+            "15%",
+            "20%",
+            "25%"
+        };
+        OptionMenu omCrit = new OptionMenu(
+            OPTION_MENU_CRIT_CHANCE,
+            critValues.ToArray(),
+            critValues[0]
+            );
+
+        bmList.Add(omCrit);
+
+        OptionPanelSettings ops = new OptionPanelSettings(bmList);
+
+        return ops;
+    }
+
     void EndOptionsScreen()
     {
+        //First just figure out if it's a boss fight or not.
+        Dictionary<string, string> selectedOptions = _buffPanelScript.GetSelectedOptions();
+        foreach (string sKey in selectedOptions.Keys)
+        {
+            Debug.Log("Option: " + sKey + " - " + selectedOptions[sKey]);
+        }
+
+        if (selectedOptions[OPTION_MENU_MODE] == OPTION_MENU_MODE_VALUE_BOSS)
+        {
+            _bossFight = true;
+        }
+        else
+        {
+            _bossFight = false;
+        }
+
+
         //Apply health buffs/debuffs to starting health meters
         _party1StartHealth = PlayerStartHealth * (1 + _buffIncreasePlayerHealthPercent);
         _party1Health = _party1StartHealth;
@@ -289,6 +387,11 @@ public class _CanvasScript : MonoBehaviour
             _party2StartHealth = _party1StartHealth;
         }
         _party2Health = _party2StartHealth;
+
+
+        //Want to clean up old rendering of things from previous games
+        _partyScript1.RefreshHealth(_party1StartHealth, _party1StartHealth);
+        _partyScript2.RefreshHealth(_party2StartHealth, _party2StartHealth);
 
         //Skip to prep screen
         BeginPrepScreen();
@@ -319,52 +422,155 @@ public class _CanvasScript : MonoBehaviour
         _timeLeft = _currentActivePeriodSeconds;
         _currentTimeLeftSeconds = _timeLeft;
 
-        int wGameButtonCount = _gameButtonList.Count;
+        //If this is a boss fight, only pick a button for the first team.
+        // If it's a PVP battle, need to pick a button for each.
 
-        //Grab a new key
-        if (_currentButton == null)
-        {
-            _currentButton = _gameButtonList[Random.Range(0, wGameButtonCount)];
-        }
-        else
-        {
-            //If we've already got a current button then we need to randomly select a new one... but not the same one.
-            GameButton newButton = _currentButton;
-            int wCount = 0;
-            while (newButton.Key == _currentButton.Key && wCount < wGameButtonCount)
-            {
-                int wRandom = Random.Range(0, wGameButtonCount);
-                //Keep cycling until we get a different random key than the one 
-                newButton = _gameButtonList[wRandom];
-                Debug.Log(wRandom);
-                wCount++;
-            }
+        //Start with Party 1, they will need a button regardless
+        _party1CurrentButton = GetRandomButton(_party1ActiveButtons, _party1CurrentButton, _party1PreviousButton);
 
-            //NewButton should not be the same as current button, so replace it.
-            _currentButton = newButton;
+        //Let's check if the game is PVP, then select a button for party 2 (if necessary)
+        if (!_bossFight)
+        {
+            _party2CurrentButton = GetRandomButton(_party2ActiveButtons, _party2CurrentButton, _party2PreviousButton);
         }
 
         _completedCycles++;
     }
 
-    void Player1InputFailByButtonPress()
+    static GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
     {
-        //Incorrect button presses result in damage
-        ApplyDamageToParty1();
+        int wButtonCount = gameButtons.Count;
+        if (currentButton == null)
+        {
+            //The first button will be truly random because we don't have to worry about copying a previous button.
+            return gameButtons[Random.Range(0, wButtonCount)];
+        }
+        else
+        {
+            //If we've already got a current button then we need to randomly select a new one... but not the same one.
+            GameButton newButton = currentButton;
+            int wCount = 0;
+            while ((newButton.Key == currentButton.Key || (previousButton != null && newButton.Key == previousButton.Key)) && wCount < wButtonCount)
+            {
+                int wRandom = Random.Range(0, wButtonCount);
+                //Keep cycling until we get a different random key than the one 
+                newButton = gameButtons[wRandom];
+                wCount++;
+            }
+
+            //NewButton should not be the same as current button, so replace it.
+            return newButton;
+        } 
+    }
+
+    void FailByButtonPress()
+    {
+        //First need to figure out which party fucked up
+        if (_bossFight)
+        {
+            //If it's a boss fight, then we know it was party one, cuz there's only one party one.
+            Party1InputFailByButtonPress();
+        }
+        else
+        {
+            //Iterate through the button list and find the fail button.
+            if (Input.GetKeyDown(_party1DummyButton.Key))
+            {
+                Party1InputFailByButtonPress();
+            }
+            else if (Input.GetKeyDown(_party2DummyButton.Key))
+            {
+                Party2InputFailByButtonPress();
+            }
+            else
+            {
+                //Have to iterate through both team's buttons until we find the one that sucks.
+                bool bButtonFound = true;
+                foreach (GameButton gb in _party1ActiveButtons)
+                {
+                    if (Input.GetKeyDown(gb.Key))
+                    {
+                        Party1InputFailByButtonPress();
+                        bButtonFound = true;
+                        break;
+                    }
+                }
+
+                //Actually, it could be both parties failing at the same time. Punish them both!
+                foreach (GameButton gb in _party2ActiveButtons)
+                {
+                    if (Input.GetKeyDown(gb.Key))
+                    {
+                        Party2InputFailByButtonPress();
+                        bButtonFound = true;
+                        break;
+                    }
+                }
+
+                //Do we care if we found a button press or not?
+            }
+        }
+
         BeginFailScreen();
     }
 
-    void Player1InputFailByTime()
+    void FailByTimeElapsed()
+    {
+        if (_bossFight)
+        {
+            //If it's a boss fight, only punish team one... because they are the only team!
+            Party1InputFailByTime();
+        }
+        else
+        {
+            //What?! They BOTH failed!
+            Party1InputFailByTime();
+            Party2InputFailByTime();
+        }
+
+        BeginFailScreen();
+    }
+
+    void Party1InputFailByButtonPress()
+    {
+        ApplyDamageToParty1();
+    }
+
+    void Party2InputFailByButtonPress()
+    {
+        ApplyDamageToParty2();
+    }
+
+    void Party1InputFailByTime()
     {
         //TEMPORARY: Later in development we will not be assigning damage for timeouts.
         ApplyDamageToParty1();
-        BeginFailScreen();
     }
 
-    void Player1InputSuccess()
+    void Party2InputFailByTime()
     {
+        //TEMPORARY: Later in development we will not be assigning damage for timeouts.
+        ApplyDamageToParty2();
+    }
+    
+    //If both players pressed at the same time... wow! It's a tie! Do something?
+    void PartyInputTie()
+    {
+        //What do we do?
+        //Fuck it, for now assume party 1 wins
+    }
+
+    void Party1InputSuccess()
+    {
+        //Party 1 pressed their button. Apply damage to party 2/boss
         ApplyDamageToParty2();
         BeginSuccessScreen();
+    }
+
+    //They pressed the correct button. That means success.
+    void Party2InputSuccess()
+    {
+
     }
 
     void BeginSuccessScreen()
@@ -516,7 +722,9 @@ public class _CanvasScript : MonoBehaviour
 
             TimerPanel.SetActive(false);
 
-            ShowText(false, ButtonNameText);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
+
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
             ShowText(false, FailText);
@@ -540,7 +748,9 @@ public class _CanvasScript : MonoBehaviour
 
             TimerPanel.SetActive(false);
 
-            ShowText(false, ButtonNameText);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
+
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
             ShowText(false, FailText);
@@ -572,7 +782,9 @@ public class _CanvasScript : MonoBehaviour
             UpdateBossHealthText();
             ShowText(true, BossHealthText);
 
-            ShowText(false, ButtonNameText);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
+
             ShowText(false, FailText);
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
@@ -594,7 +806,9 @@ public class _CanvasScript : MonoBehaviour
 
             //Render Current Active Key
             UpdateButtonNameText();
-            ShowText(true, ButtonNameText);
+            ShowText(true, Party1ButtonNameText);
+            ShowText(!_bossFight, Party2ButtonNameText);
+
 
             //Render Player Health
             UpdatePlayerHealthText();
@@ -619,8 +833,8 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, TitleText);
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
-            ShowText(false, ButtonNameText);
-            ShowText(false, ButtonNameText);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
 
             //Render Timer
             TimerPanel.SetActive(false);
@@ -648,8 +862,8 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, TitleText);
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
-            ShowText(false, ButtonNameText);
-            ShowText(false, ButtonNameText);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
 
             //Render Timer
             TimerPanel.SetActive(false);
@@ -678,7 +892,8 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
             TimerPanel.SetActive(false);
-            ShowText(false, ButtonNameText);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
             ShowText(false, FailText);
@@ -696,7 +911,8 @@ public class _CanvasScript : MonoBehaviour
             ShowText(false, BuffText);
             ShowText(false, GetReadyText);
             TimerPanel.SetActive(false);
-            ShowText(false, ButtonNameText);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
             ShowText(false, FailText);
@@ -730,7 +946,14 @@ public class _CanvasScript : MonoBehaviour
 
     void UpdateButtonNameText()
     {
-        ButtonNameText.text = _currentButton.Name + " - " + _currentButton.Key.ToString();
+        //Always show player 1 button commands
+        Party1ButtonNameText.text = _party1CurrentButton.Name + " - " + _party1CurrentButton.Key.ToString();
+
+        if (!_bossFight)
+        {
+            //If PVP, Show both button commands
+            Party2ButtonNameText.text = _party2CurrentButton.Name + " - " + _party2CurrentButton.Key.ToString();
+        }
     }
 
     void UpdatePlayerHealthText()
@@ -770,25 +993,55 @@ public class _CanvasScript : MonoBehaviour
 
     #region Game Button Definition
 
-    private List<GameButton> _player1Buttons;
-    private List<GameButton> _player2Buttons;
-    private List<GameButton> _player3Buttons;
-    private List<GameButton> _player4Buttons;
+    void SetupButtons()
+    {
+        _player1Buttons = GetPlayer1Buttons();
+        _player2Buttons = GetPlayer2Buttons();
+        _player3Buttons = GetPlayer3Buttons();
+        _player4Buttons = GetPlayer4Buttons();
+        _party1DummyButton = GetParty1DummyButton();
+        _party2DummyButton = GetParty2DummyButton();
+
+        //The party buttons are the list of buttons we can use for the next random button press.
+        _party1ActiveButtons = new List<GameButton>();
+        _party2ActiveButtons = new List<GameButton>();
+        if (_bossFight)
+        {
+            //Boss fight combines all the buttons.
+            _party1ActiveButtons.AddRange(_player1Buttons);
+            _party1ActiveButtons.AddRange(_player2Buttons);
+            _party1ActiveButtons.AddRange(_player3Buttons);
+            _party1ActiveButtons.AddRange(_player4Buttons);
+
+            //Leave Party2ActiveButtons empty, because there is no party 2. Boss is AI!
+        }
+        else
+        {
+            //PVP
+            //Player 1 and 2 on party 1
+            _party1ActiveButtons.AddRange(_player1Buttons);
+            _party1ActiveButtons.AddRange(_player2Buttons);
+
+            //player 3 and 4 on party 2
+            _party2ActiveButtons.AddRange(_player3Buttons);
+            _party2ActiveButtons.AddRange(_player4Buttons);
+        }
+    }
 
     List<GameButton> GetPlayer1Buttons()
     {
         List<GameButton> gbList = new List<GameButton>();
 
         gbList.Add(new GameButton(KeyCode.A, "Kill With Fire"));
-        gbList.Add(new GameButton(KeyCode.B, "Run Like Hell"));
+        gbList.Add(new GameButton(KeyCode.B, "Turn Off and Back On"));
         gbList.Add(new GameButton(KeyCode.C, "360 No Scope"));
         gbList.Add(new GameButton(KeyCode.D, "Tank and Spank"));
-        gbList.Add(new GameButton(KeyCode.E, "Spray and Pray"));
-        gbList.Add(new GameButton(KeyCode.F, "Slay"));
-        gbList.Add(new GameButton(KeyCode.G, "Geld"));
-        gbList.Add(new GameButton(KeyCode.H, "Invite To Tea"));
-        gbList.Add(new GameButton(KeyCode.I, "Remove Splinter"));
-        gbList.Add(new GameButton(KeyCode.J, "Aggrevate Old Groin Injury"));
+        gbList.Add(new GameButton(KeyCode.E, "Falcon Punch!"));
+        gbList.Add(new GameButton(KeyCode.F, "Overcook the Roast"));
+        gbList.Add(new GameButton(KeyCode.G, "Put Gum in Hair"));
+        gbList.Add(new GameButton(KeyCode.H, "Spray and Pray"));
+        gbList.Add(new GameButton(KeyCode.I, "Aggrevate Old Tap-Dancing Injury"));
+        gbList.Add(new GameButton(KeyCode.J, "Flying Groin Stomp"));
 
         return gbList;
     }
@@ -797,16 +1050,16 @@ public class _CanvasScript : MonoBehaviour
     {
         List<GameButton> gbList = new List<GameButton>();
 
-        gbList.Add(new GameButton(KeyCode.K, "Get Good"));
-        gbList.Add(new GameButton(KeyCode.L, "Wreck Shop"));
-        gbList.Add(new GameButton(KeyCode.M, "Invite Criticism"));
-        gbList.Add(new GameButton(KeyCode.N, "Count Beans"));
-        gbList.Add(new GameButton(KeyCode.O, "420Blazem"));
-        gbList.Add(new GameButton(KeyCode.P, "Kappa Kappa Kappa"));
-        gbList.Add(new GameButton(KeyCode.Q, "Eat Chips on Voice Chat"));
-        gbList.Add(new GameButton(KeyCode.R, "Spill Soda on Keyboard"));
+        gbList.Add(new GameButton(KeyCode.K, "Flail Wildly"));
+        gbList.Add(new GameButton(KeyCode.L, "Charge-a Your Laser"));
+        gbList.Add(new GameButton(KeyCode.M, "Don't Send Christmas Card"));
+        gbList.Add(new GameButton(KeyCode.N, "Spin to Win"));
+        gbList.Add(new GameButton(KeyCode.O, "420 Blazem"));
+        gbList.Add(new GameButton(KeyCode.P, "Kill with Kindness"));
+        gbList.Add(new GameButton(KeyCode.Q, "Give Just One Chip"));
+        gbList.Add(new GameButton(KeyCode.R, "Run in Circles"));
         gbList.Add(new GameButton(KeyCode.S, "Press Alt + F4"));
-        gbList.Add(new GameButton(KeyCode.T, "Heal Through The Damage"));
+        gbList.Add(new GameButton(KeyCode.T, "Fap Quietly to Food Network"));
 
         return gbList;
     }
@@ -823,8 +1076,8 @@ public class _CanvasScript : MonoBehaviour
         gbList.Add(new GameButton(KeyCode.Z, "Jump on the Bandwagon"));
         gbList.Add(new GameButton(KeyCode.LeftBracket, "Smoke (If you got em)"));
         gbList.Add(new GameButton(KeyCode.RightBracket, "Fire da Lazzzooor"));
-        gbList.Add(new GameButton(KeyCode.LeftParen, "Gank Top"));
-        gbList.Add(new GameButton(KeyCode.RightParen, "Roll Need"));
+        gbList.Add(new GameButton(KeyCode.Comma, "Gank Top"));
+        gbList.Add(new GameButton(KeyCode.Period, "Roll Need"));
 
         return gbList;
     }
@@ -845,6 +1098,38 @@ public class _CanvasScript : MonoBehaviour
         gbList.Add(new GameButton(KeyCode.Alpha9, "Turn it up to 11"));
 
         return gbList;
+    }
+
+    GameButton GetParty1DummyButton()
+    {
+        return new GameButton(KeyCode.Semicolon, "Party 1 Dummy");
+    }
+
+    GameButton GetParty2DummyButton()
+    {
+        return new GameButton(KeyCode.Slash, "Party 2 Dummy");
+    }
+
+    List<GameButton> GetParty1Buttons()
+    {
+        List<GameButton> combinedList = new List<GameButton>();
+
+        combinedList.Add(GetParty1DummyButton());
+        combinedList.AddRange(GetPlayer1Buttons());
+        combinedList.AddRange(GetPlayer2Buttons());
+
+        return combinedList;
+    }
+
+    List<GameButton> GetParty2Buttons()
+    {
+        List<GameButton> combinedList = new List<GameButton>();
+
+        combinedList.Add(GetParty2DummyButton());
+        combinedList.AddRange(GetPlayer3Buttons());
+        combinedList.AddRange(GetPlayer4Buttons());
+
+        return combinedList;
     }
 
     #endregion

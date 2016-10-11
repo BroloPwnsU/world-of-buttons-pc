@@ -15,7 +15,7 @@ public class HealthBar : MonoBehaviour {
 	
 	}
 
-    void Reset()
+    public void Reset()
     {
         transform.localScale += new Vector3(
             _healthBarInitialScaleX,
@@ -26,7 +26,12 @@ public class HealthBar : MonoBehaviour {
 
     public void TakeDamage(float damage, bool bCrit, float newCurrentHP, float originalHP)
     {
-        float currentScaleX = (newCurrentHP/originalHP) * _healthBarInitialScaleX;
+        SetCurrentHealth(newCurrentHP, originalHP);
+    }
+
+    public void SetCurrentHealth(float newCurrentHP, float originalHP)
+    {
+        float currentScaleX = (newCurrentHP / originalHP) * _healthBarInitialScaleX;
         transform.localScale = new Vector3(
             currentScaleX,
             transform.localScale.y,

@@ -48,6 +48,12 @@ public class PartyGroupBrain : MonoBehaviour
 
     }
 
+    public void RefreshHealth(float currentHP, float originalHP)
+    {
+        _healthText.text = ((int)currentHP).ToString();
+        _healthBarScript.SetCurrentHealth(currentHP, originalHP);
+    }
+
     public void MakeAttack(bool bCrit)
     {
         if (bCrit)

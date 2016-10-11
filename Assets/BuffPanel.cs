@@ -48,44 +48,6 @@ public class BuffPanel : MonoBehaviour {
         }
     }
 
-    public void StartOptions()
-    {
-        List<OptionMenu> bmList = new List<OptionMenu>();
-
-        List<string> modeValues = new List<string>()
-        {
-            "Boss Battle",
-            "PVP"
-        };
-        OptionMenu bmMode = new OptionMenu(
-            "Mode:",
-            modeValues.ToArray(),
-            modeValues[0]
-            );
-
-        bmList.Add(bmMode);
-
-        List<string> critValues = new List<string>()
-        {
-            "5%",
-            "10%",
-            "15%",
-            "20%",
-            "25%"
-        };
-        OptionMenu omCrit = new OptionMenu(
-            "Crit Chance:",
-            critValues.ToArray(),
-            critValues[0]
-            );
-
-        bmList.Add(omCrit);
-
-        OptionPanelSettings ops = new OptionPanelSettings(bmList);
-
-        StartOptions(ops);
-    }
-
     public void StartOptions(OptionPanelSettings settings)
     {
         Vector3 thisPosition = new Vector3(0, 0, 0);
@@ -123,6 +85,18 @@ public class BuffPanel : MonoBehaviour {
 
             _menuIndex = 0;
         }
+    }
+
+    public Dictionary<string, string> GetSelectedOptions()
+    {
+        Dictionary<string, string> selectedOptions = new Dictionary<string, string>();
+
+        foreach (OptionMenu menu in _menus)
+        {
+            selectedOptions[menu.Title] = menu.GetSelectedValue();
+        }
+
+        return selectedOptions;
     }
 
     private OptionMenu[] _menus;
