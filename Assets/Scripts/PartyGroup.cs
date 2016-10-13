@@ -15,7 +15,7 @@ public class PartyGroup : MonoBehaviour
     public List<AudioClip> AttackSounds;
     public List<AudioClip> CritSounds;
 
-    public bool IsPVE = true;
+    private bool _bIsBoss = false;
     public GameObject PVESpritePanel;
     public GameObject PVPSpritePanel;
 
@@ -42,10 +42,22 @@ public class PartyGroup : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    void Update()
+    public void PrepForBattle(bool bIsBoss, float StartingHealth)
     {
+        _bIsBoss = bIsBoss;
 
+        RefreshHealth(StartingHealth, StartingHealth);
+
+        if (_bIsBoss)
+        {
+            PVESpritePanel.SetActive(true);
+            PVPSpritePanel.SetActive(false);
+        }
+        else
+        {
+            PVESpritePanel.SetActive(false);
+            PVPSpritePanel.SetActive(true);
+        }
     }
 
     public void RefreshHealth(float currentHP, float originalHP)

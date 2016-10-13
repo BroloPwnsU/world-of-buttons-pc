@@ -67,6 +67,11 @@ public class ButtonMaster : MonoBehaviour
 
     public void SetupButtons(bool bIsBossFight)
     {
+        Party1CurrentButton = null;
+        Party1PreviousButton = null;
+        Party2CurrentButton = null;
+        Party2PreviousButton = null;
+
         Player1Buttons = this.GetPlayer1Buttons();
         Player2Buttons = this.GetPlayer2Buttons();
         Player3Buttons = this.GetPlayer3Buttons();

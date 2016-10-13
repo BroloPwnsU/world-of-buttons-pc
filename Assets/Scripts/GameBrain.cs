@@ -353,24 +353,37 @@ public class GameBrain : MonoBehaviour
 
 
         //Apply health buffs/debuffs to starting health meters
-        _party1StartHealth = PlayerStartHealth * (1 + _buffIncreasePlayerHealthPercent);
-        _party1Health = _party1StartHealth;
-        
-        //If it's a boss fight then player 2 uses the boss's stats. Otherwise it copies player 1.
-        if (_bossFight)
+
+        //If it's a PVP fight then player 1 uses the boss's stats. Otherwise it copies player 1.
+        //We do this so the PVP fight lasts a good long while.
+
+        if (!_bossFight)
         {
-            _party2StartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
+            //Player 2 always has the boss's health level.
+            //Don't apply debuffs/buffs during PVP.
+            _party2StartHealth = BossStartHealth;
+            _party1StartHealth = BossStartHealth;
         }
         else
         {
-            _party2StartHealth = _party1StartHealth;
+            //It's PVE... apply the debuffs to boss health.
+            _party2StartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
+            _party1StartHealth = PlayerStartHealth * (1 + _buffIncreasePlayerHealthPercent);
         }
+
         _party2Health = _party2StartHealth;
-
-
+        _party1Health = _party1StartHealth;
+        
         //Want to clean up old rendering of things from previous games
         _party1.RefreshHealth(_party1StartHealth, _party1StartHealth);
         _party2.RefreshHealth(_party2StartHealth, _party2StartHealth);
+
+        //Re-initialize the buttons for the current fight.
+        _buttonMaster.SetupButtons(_bossFight);
+
+        //Prep the player/boss panels for battle.
+        _party1.PrepForBattle(false, _party1StartHealth);
+        _party2.PrepForBattle(_bossFight, _party2StartHealth);
 
         //Skip to prep screen
         BeginPrepScreen();
@@ -381,6 +394,7 @@ public class GameBrain : MonoBehaviour
         _gameState = GameState.PrepScreen;
         _timeLeft = PrepScreenSeconds;
         _currentTimeLeftSeconds = _timeLeft;
+
     }
 
     void EndPrepScreen()
@@ -394,9 +408,24 @@ public class GameBrain : MonoBehaviour
 
         _gameState = GameState.ActiveScreen;
 
+        //We want to make the active screen longer in PVP. It's a race against each other, not the clock.
+        float fInitialActiveScreenSeconds;
+        if (_bossFight)
+            fInitialActiveScreenSeconds = InitialActiveScreenSeconds;
+        else
+            fInitialActiveScreenSeconds = InitialActiveScreenSeconds * 5;
+
+        float fMinimumActiveScreenSeconds;
+        if (_bossFight)
+            fMinimumActiveScreenSeconds = MinimumActiveScreenSeconds;
+        else
+            fMinimumActiveScreenSeconds = MinimumActiveScreenSeconds * 5;
+
+
+
         //Set the time span based on the current cycle.
         //_currentActivePeriodSeconds = InitialActiveScreenSeconds - (ActiveSecondsDecreasePerCycle * _completedCycles);
-        _currentActivePeriodSeconds = ((InitialActiveScreenSeconds - MinimumActiveScreenSeconds) * (1 / Mathf.Pow(ActiveScreenScalingFactor * _completedCycles + 1, 2)) + MinimumActiveScreenSeconds) * _buffIncreaseActiveTimeMultiplier;
+        _currentActivePeriodSeconds = ((fInitialActiveScreenSeconds - fMinimumActiveScreenSeconds) * (1 / Mathf.Pow(ActiveScreenScalingFactor * _completedCycles + 1, 2)) + fMinimumActiveScreenSeconds) * _buffIncreaseActiveTimeMultiplier;
 
         _timeLeft = _currentActivePeriodSeconds;
         _currentTimeLeftSeconds = _timeLeft;
@@ -898,8 +927,8 @@ public class GameBrain : MonoBehaviour
 
 
             //Render Player Health
-            UpdatePlayerHealthText();
-            ShowText(true, PlayerHealthText);
+            BossPanel.SetActive(true);
+            PlayerPanel.SetActive(true);
 
             //Render Boss Health
             UpdateBossHealthText();
@@ -912,8 +941,6 @@ public class GameBrain : MonoBehaviour
             ShowText(false, YouWinText);
 
             OptionsPanel.SetActive(false);
-            BossPanel.SetActive(true);
-            PlayerPanel.SetActive(true);
         }
         else if (_gameState == GameState.FailScreen)
         {
@@ -1039,7 +1066,7 @@ public class GameBrain : MonoBehaviour
         if (!_bossFight)
         {
             //If PVP, Show both button commands
-            Party2ButtonNameText.text = _buttonMaster.GetCurrentParty2ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
+            Party2ButtonNameText.text = _buttonMaster.GetCurrentParty2ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty2ActiveButton().NumberKey.ToString();
         }
     }
 
