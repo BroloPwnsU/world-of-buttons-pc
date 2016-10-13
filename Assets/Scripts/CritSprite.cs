@@ -2,20 +2,20 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class CritSpriteScript : MonoBehaviour
+public class CritSprite : MonoBehaviour
 {
 
     float _duration = 1.0f;
     float _timeLeft = 0.0f;
-    public Renderer rend;
+    private Renderer _rend;
 
     private Color colorStart = new Color(0, 255, 0, 1);
     private Color colorEnd = new Color(0, 255, 0, 0);
 
     void Start()
     {
-        rend = GetComponent<Renderer>();
-        rend.material.color = Color.Lerp(colorStart, colorEnd, 1);
+        _rend = GetComponent<Renderer>();
+        _rend.material.color = Color.Lerp(colorStart, colorEnd, 1);
     }
 
     public void Show()
@@ -34,7 +34,7 @@ public class CritSpriteScript : MonoBehaviour
             float b = 2;
 
             float lerp = (a - b * Mathf.Floor(a / b)) / b;
-            rend.material.color = Color.Lerp(colorStart, colorEnd, lerp);
+            _rend.material.color = Color.Lerp(colorStart, colorEnd, lerp);
         }
     }
 }

@@ -3,10 +3,11 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class BuffPanel : MonoBehaviour {
+public class OptionsPanel : MonoBehaviour {
 
     public AudioClip ChangeValueAudioClip;
     public AudioClip ContinueAudioClip;
+    public AudioClip ChangeValueFailAudioClip;
     private AudioSource _audioSource;
 
     public Text OptionsHeaderText;
@@ -44,8 +45,14 @@ public class BuffPanel : MonoBehaviour {
         else if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
         {
             //Pressed enter. Only works when hovering on the Continue button.
-            //Continue();
+            Continue();
+            
         }
+    }
+
+    void Continue()
+    {
+        PlayContinueSound();
     }
 
     public void StartOptions(OptionPanelSettings settings)
@@ -71,7 +78,7 @@ public class BuffPanel : MonoBehaviour {
                 menuSelectorClone.transform.parent = gameObject.transform;
 
                 //Attach the script to the menu object so we can manipulate the object programmatically
-                MenuSelectorScript mss = menuSelectorClone.GetComponent<MenuSelectorScript>();
+                MenuSelector mss = menuSelectorClone.GetComponent<MenuSelector>();
                 _menus[i].Script = mss;
 
                 OptionMenu om = _menus[i];
@@ -114,27 +121,63 @@ public class BuffPanel : MonoBehaviour {
 
     private void SelectMenu(int newIndex)
     {
-        Debug.Log("newIndex: " + newIndex);
+        bool bSuccess = false;
         if (newIndex < 0)
+        {
             _menuIndex = 0;
+        }
         else if (newIndex >= _menus.Length)
+        {
             _menuIndex = _menus.Length - 1;
+        }
         else
+        {
+            bSuccess = true;
             _menuIndex = newIndex;
+        }
 
         UpdateSelectedMenu();
+        if (bSuccess)
+        {
+            PlayChangeSuccessSound();
+        }
+        else
+        {
+            PlayChangeFailSound();
+        }
     }
 
     public void MoveLeft()
     {
-        _menus[_menuIndex].PreviousOption();
-        UpdateSelectedOption();
+        MoveValue(false);
     }
 
     public void MoveRight()
     {
-        _menus[_menuIndex].NextOption();
+        MoveValue(true);
+    }
+
+    public void MoveValue(bool bNext)
+    {
+        bool bSuccess = false;
+        if (bNext)
+        {
+            bSuccess = _menus[_menuIndex].NextOption();
+        }
+        else
+        {
+            bSuccess = _menus[_menuIndex].PreviousOption();
+        }
+
         UpdateSelectedOption();
+        if (bSuccess)
+        {
+            PlayChangeSuccessSound();
+        }
+        else
+        {
+            PlayChangeFailSound();
+        }
     }
 
     void UpdateSelectedMenu()
@@ -155,6 +198,25 @@ public class BuffPanel : MonoBehaviour {
         menu.Script.ShowLeftArrow(!menu.IsFirstValue());
         menu.Script.ShowRightArrow(!menu.IsLastValue());
     }
+
+    #region sounds
+
+    void PlayChangeSuccessSound()
+    {
+        _audioSource.PlayOneShot(ChangeValueAudioClip);
+    }
+
+    void PlayChangeFailSound()
+    {
+        _audioSource.PlayOneShot(ChangeValueFailAudioClip);
+    }
+
+    void PlayContinueSound()
+    {
+        _audioSource.PlayOneShot(ContinueAudioClip);
+    }
+
+    #endregion
 }
 
 public class OptionPanelSettings
@@ -172,7 +234,7 @@ public class OptionMenu
     public string[] MenuOptions;
     public string Title;
     public int OptionIndex = 0;
-    public MenuSelectorScript Script;
+    public MenuSelector Script;
 
     public OptionMenu(string sTitle, string[] optionParams)
         : this(sTitle, optionParams, null)

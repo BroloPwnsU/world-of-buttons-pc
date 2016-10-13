@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class MenuArrowScript : MonoBehaviour {
+public class MenuArrow : MonoBehaviour {
 
     public Renderer rend;
 

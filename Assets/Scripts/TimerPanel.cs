@@ -2,16 +2,16 @@
 using System.Collections;
 using UnityEngine.UI;
 
-public class TimerPanelBrain : MonoBehaviour
+public class TimerPanel : MonoBehaviour
 { 
     //There is a component called...
-    private TimerBarScript _barScript;
+    private TimerBar _barScript;
     private Text _timerText;
 
     // Use this for initialization
     void Awake()
     {
-        _barScript = GameObject.Find("TimerBar").GetComponent<TimerBarScript>();
+        _barScript = GameObject.Find("TimerBar").GetComponent<TimerBar>();
         _timerText = GameObject.Find("TimeLeftText").GetComponent<Text>();
     }
 

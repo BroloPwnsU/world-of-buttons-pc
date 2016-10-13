@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class _CanvasScript : MonoBehaviour
+public class GameBrain : MonoBehaviour
 {
     #region Private Members
     private float _timeLeft;
@@ -112,25 +112,34 @@ public class _CanvasScript : MonoBehaviour
     public float BuffCritChancePerTier;
     public float BuffNonsense;
 
-    private PartyGroupBrain _partyScript1;
-    private PartyGroupBrain _partyScript2;
-    private TimerPanelBrain _timerPanelScript;
-    private BuffPanel _buffPanelScript;
+    private PartyGroup _party1;
+    private PartyGroup _party2;
+    private TimerPanel _timerPanel;
+    private OptionsPanel _buffPanel;
     #endregion
 
     // Use this for initialization
     void Start()
     {
         //_gameButtonList = GetGameButtonList();
-        _partyScript1 = PlayerPanel.GetComponent<PartyGroupBrain>();
-        _partyScript2 = BossPanel.GetComponent<PartyGroupBrain>();
-        _timerPanelScript = TimerPanel.GetComponent<TimerPanelBrain>();
-        _buffPanelScript = OptionsPanel.GetComponent<BuffPanel>();
+        _party1 = PlayerPanel.GetComponent<PartyGroup>();
+        _party2 = BossPanel.GetComponent<PartyGroup>();
+        _timerPanel = TimerPanel.GetComponent<TimerPanel>();
+        _buffPanel = OptionsPanel.GetComponent<OptionsPanel>();
 
         RevertToTitleScreen();
     }
 
     // Update is called once per frame
+
+    IEnumerator Example()
+    {
+        print(Time.time);
+        yield return new WaitForSeconds(5);
+        print(Time.time);
+        EndOptionsScreen();
+
+    }
 
     void Update()
     {
@@ -185,7 +194,7 @@ public class _CanvasScript : MonoBehaviour
             //Since they don't have anything to do, we will just wait for the enter key to be pressed.
             if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             {
-                EndOptionsScreen();
+                StartCoroutine(Example());
             }
 
             ///NOT IMPLEMENTED
@@ -324,7 +333,7 @@ public class _CanvasScript : MonoBehaviour
     {
         _gameState = GameState.OptionsScreen;
 
-        _buffPanelScript.StartOptions(GetOptionsSettings());
+        _buffPanel.StartOptions(GetOptionsSettings());
 
         //Assign some random values for now
         _bossFight = true;
@@ -382,7 +391,7 @@ public class _CanvasScript : MonoBehaviour
     void EndOptionsScreen()
     {
         //First just figure out if it's a boss fight or not.
-        Dictionary<string, string> selectedOptions = _buffPanelScript.GetSelectedOptions();
+        Dictionary<string, string> selectedOptions = _buffPanel.GetSelectedOptions();
         foreach (string sKey in selectedOptions.Keys)
         {
             Debug.Log("Option: " + sKey + " - " + selectedOptions[sKey]);
@@ -415,8 +424,8 @@ public class _CanvasScript : MonoBehaviour
 
 
         //Want to clean up old rendering of things from previous games
-        _partyScript1.RefreshHealth(_party1StartHealth, _party1StartHealth);
-        _partyScript2.RefreshHealth(_party2StartHealth, _party2StartHealth);
+        _party1.RefreshHealth(_party1StartHealth, _party1StartHealth);
+        _party2.RefreshHealth(_party2StartHealth, _party2StartHealth);
 
         //Skip to prep screen
         BeginPrepScreen();
@@ -866,8 +875,8 @@ public class _CanvasScript : MonoBehaviour
                 BossMinimumDamagePerAttack,
                 BossMaximumDamagePerAttack,
                 0.0f,
-                _partyScript2,
-                _partyScript1
+                _party2,
+                _party1
                 );
         }
         else
@@ -878,8 +887,8 @@ public class _CanvasScript : MonoBehaviour
                 PlayerMinimumDamagePerAttack,
                 PlayerMaximumDamagePerAttack,
                 _buffParty2CritChance,
-                _partyScript2,
-                _partyScript1
+                _party2,
+                _party1
                 );
         }
     }
@@ -892,12 +901,12 @@ public class _CanvasScript : MonoBehaviour
             PlayerMinimumDamagePerAttack,
             PlayerMaximumDamagePerAttack,
             _buffParty1CritChance,
-            _partyScript1,
-            _partyScript2
+            _party1,
+            _party2
             );
     }
 
-    private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroupBrain partyScriptAttack, PartyGroupBrain partyScriptDefend)
+    private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroup partyAttack, PartyGroup partyDefend)
     {
         //Get a random damage value from within the specific player attack range
         float damage = Mathf.FloorToInt(Random.Range(
@@ -921,9 +930,9 @@ public class _CanvasScript : MonoBehaviour
             newHealth -= damage;
         }
 
-        partyScriptAttack.MakeAttack(bCrit);
+        partyAttack.MakeAttack(bCrit);
 
-        partyScriptDefend.TakeDamage(
+        partyDefend.TakeDamage(
             damage,
             newHealth,
             startHealth,
@@ -1169,7 +1178,7 @@ public class _CanvasScript : MonoBehaviour
 
     void UpdateTimeLeftText()
     {
-        _timerPanelScript.SetTime(_timeLeft, _currentTimeLeftSeconds);
+        _timerPanel.SetTime(_timeLeft, _currentTimeLeftSeconds);
     }
 
     void UpdateButtonNameText()

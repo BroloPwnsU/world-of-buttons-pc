@@ -2,12 +2,12 @@
 using UnityEngine.UI;
 using System.Collections;
 
-public class MenuSelectorScript : MonoBehaviour {
+public class MenuSelector : MonoBehaviour {
 
     private Text _menuOptionText;
     private Text _valueText;
-    private MenuArrowScript _leftArrow;
-    private MenuArrowScript _rightArrow;
+    private MenuArrow _leftArrow;
+    private MenuArrow _rightArrow;
 
     public Color HighlightColor = new Color(1.0f, 0.0f, 0.0f, 1.0f);
     public Color LowlightColor = new Color(0.0f, 0.0f, 1.0f, 1.0f);
@@ -32,10 +32,10 @@ public class MenuSelectorScript : MonoBehaviour {
             }
         }
 
-        MenuArrowScript[] arrowScripts = gameObject.GetComponentsInChildren<MenuArrowScript>();
-        if (arrowScripts != null)
+        MenuArrow[] arrows = gameObject.GetComponentsInChildren<MenuArrow>();
+        if (arrows != null)
         {
-            foreach (MenuArrowScript scr in arrowScripts)
+            foreach (MenuArrow scr in arrows)
             {
                 if (scr.gameObject.name == "LeftArrow")
                 {

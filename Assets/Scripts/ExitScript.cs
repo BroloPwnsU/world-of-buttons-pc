@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class _MainBrainScript : MonoBehaviour {
+public class ExitScript : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {

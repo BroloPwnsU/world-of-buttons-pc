@@ -3,12 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-public class PartyGroupBrain : MonoBehaviour
+public class PartyGroup : MonoBehaviour
 {
     //There is a component called...
-    private HealthBar _healthBarScript;
-    private DamageSpriteScript _damageSpriteScript;
-    private CritSpriteScript _critSpriteScript;
+    private HealthBar _healthBar;
+    private DamageSprite _damageSprite;
+    private CritSprite _critSprite;
     private Text _healthText;
 
     private AudioSource _audioSource;
@@ -22,9 +22,9 @@ public class PartyGroupBrain : MonoBehaviour
     // Use this for initialization
     void Awake()
     {
-        _healthBarScript = gameObject.GetComponentInChildren<HealthBar>();
-        _damageSpriteScript = gameObject.GetComponentInChildren<DamageSpriteScript>();
-        _critSpriteScript = gameObject.GetComponentInChildren<CritSpriteScript>();
+        _healthBar = gameObject.GetComponentInChildren<HealthBar>();
+        _damageSprite = gameObject.GetComponentInChildren<DamageSprite>();
+        _critSprite = gameObject.GetComponentInChildren<CritSprite>();
         _audioSource = GetComponent<AudioSource>();
 
         //If we have to add multiple text boxes then we will need this script to sort through them and select the proper textbox
@@ -51,7 +51,7 @@ public class PartyGroupBrain : MonoBehaviour
     public void RefreshHealth(float currentHP, float originalHP)
     {
         _healthText.text = ((int)currentHP).ToString();
-        _healthBarScript.SetCurrentHealth(currentHP, originalHP);
+        _healthBar.SetCurrentHealth(currentHP, originalHP);
     }
 
     public void MakeAttack(bool bCrit)
@@ -70,12 +70,12 @@ public class PartyGroupBrain : MonoBehaviour
 
     public void TakeDamage(float damage, float newCurrentHP, float originalHP, bool bCrit)
     {
-        _healthBarScript.TakeDamage(damage, false, newCurrentHP, originalHP);
+        _healthBar.TakeDamage(damage, false, newCurrentHP, originalHP);
 
         if (bCrit)
-            _critSpriteScript.Show();
+            _critSprite.Show();
         else
-            _damageSpriteScript.Show();
+            _damageSprite.Show();
 
         _healthText.text = ((int)newCurrentHP).ToString();
 

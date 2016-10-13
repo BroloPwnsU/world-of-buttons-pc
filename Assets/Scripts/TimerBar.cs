@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class TimerBarScript : MonoBehaviour
+public class TimerBar : MonoBehaviour
 {
 
     private float _barInitialScaleX;
