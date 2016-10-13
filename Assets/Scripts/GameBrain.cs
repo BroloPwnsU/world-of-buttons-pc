@@ -10,51 +10,9 @@ public class GameBrain : MonoBehaviour
     private float _currentTimeLeftSeconds;
     private float _currentActivePeriodSeconds;
     private int _completedCycles;
-
-
+    
     private bool AutoInputDualActionMode = true;
-
-    private List<GameButton> _player1Buttons;
-    private List<GameButton> _player2Buttons;
-    private List<GameButton> _player3Buttons;
-    private List<GameButton> _player4Buttons;
-
-    private List<KeyCode> _allNumberKeys = new List<KeyCode>();
-
-    private List<KeyCode> _allLetterKeys = new List<KeyCode>()
-    {
-        KeyCode.Semicolon,
-        KeyCode.Colon,
-        KeyCode.Quote,
-        KeyCode.DoubleQuote,
-        KeyCode.RightBracket,
-        KeyCode.LeftBracket
-    };
-
-    //These can change based on settings and configuration that happens at runtime.
-    private KeyCode _player1LetterKey = KeyCode.Semicolon;
-    private KeyCode _player2LetterKey = KeyCode.Colon;
-    private KeyCode _player3LetterKey = KeyCode.Quote;
-    private KeyCode _player4LetterKey = KeyCode.DoubleQuote;
-    private KeyCode _party1DummyLetterKey = KeyCode.RightBracket;
-    private KeyCode _party2DummyLetterKey = KeyCode.LeftBracket;
-    private KeyCode _party1DummyNumberKey = KeyCode.RightParen;
-    private KeyCode _party2DummyNumberKey = KeyCode.LeftParen;
-
-    private JoystickAssignment _player1JoystickAssignment = JoystickAssignment.Joystick3;
-    private JoystickAssignment _player2JoystickAssignment = JoystickAssignment.Joystick4;
-    private JoystickAssignment _player3JoystickAssignment = JoystickAssignment.Joystick2;
-    private JoystickAssignment _player4JoystickAssignment = JoystickAssignment.Joystick1;
-
-    private GameButton _party1DummyButton;
-    private GameButton _party2DummyButton;
-    private GameButton _party1CurrentButton;
-    private GameButton _party1PreviousButton;
-    private GameButton _party2CurrentButton;
-    private GameButton _party2PreviousButton;
-
-    private List<GameButton> _party1ActiveButtons;
-    private List<GameButton> _party2ActiveButtons;
+    private ButtonMaster _buttonMaster = new ButtonMaster();
 
     private GameState _gameState;
     private bool _bossFight = true;
@@ -135,10 +93,9 @@ public class GameBrain : MonoBehaviour
     IEnumerator Example()
     {
         print(Time.time);
-        yield return new WaitForSeconds(5);
+        yield return new WaitForSeconds(2);
         print(Time.time);
         EndOptionsScreen();
-
     }
 
     void Update()
@@ -151,15 +108,15 @@ public class GameBrain : MonoBehaviour
                 if (Input.GetKeyDown(kcode))
                 {
                     sCombinedKeyDown += kcode + ", ";
-                    if (_numberToLetterKeyMapping.ContainsKey(kcode))
-                        sCombinedKeyDown += _numberToLetterKeyMapping[kcode] + ", ";
+                    sCombinedKeyDown += _buttonMaster.GetLetterKeyFromNumberKey(kcode) + ", ";
                 }
             }
             Debug.Log("Key pressed: " + sCombinedKeyDown);
 
-            if (_party1CurrentButton != null)
+            if (_gameState == GameState.ActiveScreen && _buttonMaster.GetCurrentParty1ActiveButton() != null)
             {
-                Debug.Log("Desired key: " + _party1CurrentButton.LetterKey + ", " + _party1CurrentButton.NumberKey);
+                GameButton party1Button = _buttonMaster.GetCurrentParty1ActiveButton();
+                Debug.Log("Desired key: " + party1Button.LetterKey + ", " + party1Button.NumberKey);
             }
         }
 
@@ -292,26 +249,14 @@ public class GameBrain : MonoBehaviour
 
     void ResetGameValues()
     {
+        _bossFight = true;
         _party1Health = 0.0f;
         _party2Health = 0.0f;
         _completedCycles = 0;
         _timeLeft = 0.0f;
         _currentTimeLeftSeconds = 0.0f;
-        
-        _player1Buttons = null;
-        _player2Buttons = null;
-        _player3Buttons = null;
-        _player4Buttons = null;
-        _party1DummyButton = null;
-        _party2DummyButton = null;
-        _party1CurrentButton = null;
-        _party1PreviousButton = null;
-        _party2CurrentButton = null;
-        _party2PreviousButton = null;
-        _party1ActiveButtons = null;
-        _party2ActiveButtons = null;
 
-        SetupButtons();
+        _buttonMaster.SetupButtons(_bossFight);
     }
 
     #endregion
@@ -460,46 +405,16 @@ public class GameBrain : MonoBehaviour
         // If it's a PVP battle, need to pick a button for each.
 
         //Start with Party 1, they will need a button regardless
-        _party1CurrentButton = GetRandomButton(_party1ActiveButtons, _party1CurrentButton, _party1PreviousButton);
+        _buttonMaster.SelectNewButtonForParty1();
 
         //Let's check if the game is PVP, then select a button for party 2 (if necessary)
         if (!_bossFight)
         {
-            _party2CurrentButton = GetRandomButton(_party2ActiveButtons, _party2CurrentButton, _party2PreviousButton);
+            _buttonMaster.SelectNewButtonForParty2();
         }
 
         _completedCycles++;
     }
-
-    static GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
-    {
-        int wButtonCount = gameButtons.Count;
-        if (currentButton == null)
-        {
-            //The first button will be truly random because we don't have to worry about copying a previous button.
-            return gameButtons[Random.Range(0, wButtonCount)];
-        }
-        else
-        {
-            //If we've already got a current button then we need to randomly select a new one... but not the same one.
-            GameButton newButton = currentButton;
-            int wCount = 0;
-            while (((newButton.LetterKey == currentButton.LetterKey && newButton.NumberKey == currentButton.NumberKey)
-                        || (previousButton != null && (newButton.LetterKey == previousButton.LetterKey && newButton.NumberKey == previousButton.NumberKey)))
-                    && wCount < (wButtonCount * 2))
-            {
-                int wRandom = Random.Range(0, wButtonCount);
-                //Keep cycling until we get a different random key than the one 
-                newButton = gameButtons[wRandom];
-                wCount++;
-            }
-
-            //NewButton should not be the same as current button, so replace it.
-            return newButton;
-        } 
-    }
-
-    private Dictionary<KeyCode, KeyCode> _numberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
 
     /// <summary>
     /// Handles player input during the active screen state.
@@ -517,7 +432,7 @@ public class GameBrain : MonoBehaviour
         List<KeyCode> numberKeysPressed = new List<KeyCode>();
         List<KeyCode> letterKeysPressed = new List<KeyCode>();
 
-        foreach (KeyCode numberKey in _allNumberKeys)
+        foreach (KeyCode numberKey in _buttonMaster.GetAllNumberKeys())
         {
             //Check all possible joystick number keys to look for multiple presses.
             if (Input.GetKeyDown(numberKey))
@@ -528,14 +443,14 @@ public class GameBrain : MonoBehaviour
                 //If the AutoInput mode is active then we self-populate the letter keys
                 if (AutoInputDualActionMode)
                 {
-                    KeyCode letterKey = _numberToLetterKeyMapping[numberKey];
+                    KeyCode letterKey = _buttonMaster.GetLetterKeyFromNumberKey(numberKey);
                     if (!letterKeysPressed.Contains(letterKey))
                         letterKeysPressed.Add(letterKey);
                 }
             }
         }
 
-        foreach (KeyCode letterKey in _allLetterKeys)
+        foreach (KeyCode letterKey in _buttonMaster.GetAllLetterKeys())
         {
             //Check all possible letter keys to look for multiple presses.
             if (Input.GetKeyDown(letterKey))
@@ -566,9 +481,9 @@ public class GameBrain : MonoBehaviour
                     int wParty2Count = 0;
                     foreach (KeyCode letterKey in letterKeysPressed)
                     {
-                        if ((letterKey == _player1LetterKey) || (letterKey == _player2LetterKey) || (letterKey == _party1DummyLetterKey))
+                        if (_buttonMaster.IsLetterKeyParty1(letterKey))
                             wParty1Count++;
-                        else if ((letterKey == _player3LetterKey) || (letterKey == _player4LetterKey) || (letterKey == _party2DummyLetterKey))
+                        else if (_buttonMaster.IsLetterKeyParty2(letterKey))
                             wParty2Count++;
                     }
 
@@ -605,11 +520,11 @@ public class GameBrain : MonoBehaviour
                     KeyCode letterKey = letterKeysPressed[0];
 
                     //One player pressed more than one key. Which team were they on?
-                    if ((letterKey == _player1LetterKey) || (letterKey == _player2LetterKey) || (letterKey == _party1DummyLetterKey))
+                    if (_buttonMaster.IsLetterKeyParty1(letterKey))
                     {
                         Party1InputFailByTie();
                     }
-                    else if ((letterKey == _player3LetterKey) || (letterKey == _player4LetterKey) || (letterKey == _party2DummyLetterKey))
+                    else if (_buttonMaster.IsLetterKeyParty1(letterKey))
                     {
                         Party2InputFailByTie();
                     }
@@ -623,8 +538,7 @@ public class GameBrain : MonoBehaviour
                 
                 if (_bossFight)
                 {
-                    if (_party1CurrentButton.LetterKey == letterKeysPressed[0]
-                        && _party1CurrentButton.NumberKey == numberKeysPressed[0])
+                    if (_buttonMaster.IsCurrentButtonParty1(letterKeysPressed[0], numberKeysPressed[0]))
                     {
                         //Correct key pressed!
                         Party1InputSuccess();
@@ -640,11 +554,10 @@ public class GameBrain : MonoBehaviour
                     KeyCode numberKey = numberKeysPressed[0];
 
 
-                    if ((letterKey == _player1LetterKey) || (letterKey == _player2LetterKey) || (letterKey == _party1DummyLetterKey))
+                    if (_buttonMaster.IsLetterKeyParty1(letterKey))
                     {
                         //Pressed by party 1. Was it correct?
-                        if (letterKey == _party1CurrentButton.LetterKey
-                            && numberKey == _party1CurrentButton.NumberKey)
+                        if (_buttonMaster.IsCurrentButtonParty1(letterKey, numberKey))
                         {
                             //Success!
                             Party1InputSuccess();
@@ -655,11 +568,10 @@ public class GameBrain : MonoBehaviour
                             Party1InputFailByButtonPress();
                         }
                     }
-                    else if ((letterKey == _player3LetterKey) || (letterKey == _player4LetterKey) || (letterKey == _party2DummyLetterKey))
+                    else if (_buttonMaster.IsLetterKeyParty2(letterKey))
                     {
-                        //Pressed by party 1. Was it correct?
-                        if (letterKey == _party1CurrentButton.LetterKey
-                            && numberKey == _party1CurrentButton.NumberKey)
+                        //Pressed by party 2. Was it correct?
+                        if (_buttonMaster.IsCurrentButtonParty2(letterKey, numberKey))
                         {
                             //Success!
                             Party2InputSuccess();
@@ -684,68 +596,6 @@ public class GameBrain : MonoBehaviour
         //No key was pressed, so return false;
         return false;
     }
-
-    /*
-    void FailByButtonPress()
-    {
-        foreach (GameButton gb in _party1ActiveButtons)
-        {
-            if (Input.GetKeyDown(gb.Key))
-            {
-                //Party1InputFailByButtonPress();
-                Debug.Log(gb.Key);
-            }
-        }
-
-        //First need to figure out which party fucked up
-        if (_bossFight)
-        {
-            //If it's a boss fight, then we know it was party one, cuz there's only one party one.
-            Party1InputFailByButtonPress();
-        }
-        else
-        {
-            //Iterate through the button list and find the fail button.
-            if (Input.GetKeyDown(_party1DummyButton.Key))
-            {
-                Party1InputFailByButtonPress();
-            }
-            else if (Input.GetKeyDown(_party2DummyButton.Key))
-            {
-                Party2InputFailByButtonPress();
-            }
-            else
-            {
-                //Have to iterate through both team's buttons until we find the one that sucks.
-                bool bButtonFound = true;
-                foreach (GameButton gb in _party1ActiveButtons)
-                {
-                    if (Input.GetKeyDown(gb.Key))
-                    {
-                        Party1InputFailByButtonPress();
-                        bButtonFound = true;
-                        break;
-                    }
-                }
-
-                //Actually, it could be both parties failing at the same time. Punish them both!
-                foreach (GameButton gb in _party2ActiveButtons)
-                {
-                    if (Input.GetKeyDown(gb.Key))
-                    {
-                        Party2InputFailByButtonPress();
-                        bButtonFound = true;
-                        break;
-                    }
-                }
-
-                //Do we care if we found a button press or not?
-            }
-        }
-
-        BeginFailScreen();
-    }
-    */
 
     void FailByTimeElapsed()
     {
@@ -1184,12 +1034,12 @@ public class GameBrain : MonoBehaviour
     void UpdateButtonNameText()
     {
         //Always show player 1 button commands
-        Party1ButtonNameText.text = _party1CurrentButton.Name; // + " - " + _party1CurrentButton.Key.ToString();
+        Party1ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
 
         if (!_bossFight)
         {
             //If PVP, Show both button commands
-            Party2ButtonNameText.text = _party2CurrentButton.Name; // + " - " + _party2CurrentButton.Key.ToString();
+            Party2ButtonNameText.text = _buttonMaster.GetCurrentParty2ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
         }
     }
 
@@ -1228,302 +1078,7 @@ public class GameBrain : MonoBehaviour
 
     #endregion
 
-    #region Game Button Definition
-
-    void SetupButtons()
-    {
-        _player1Buttons = GetPlayer1Buttons();
-        _player2Buttons = GetPlayer2Buttons();
-        _player3Buttons = GetPlayer3Buttons();
-        _player4Buttons = GetPlayer4Buttons();
-        _party1DummyButton = GetParty1DummyButton();
-        _party2DummyButton = GetParty2DummyButton();
-
-        //The party buttons are the list of buttons we can use for the next random button press.
-        _party1ActiveButtons = new List<GameButton>();
-        _party2ActiveButtons = new List<GameButton>();
-        if (_bossFight)
-        {
-            //Boss fight combines all the buttons.
-           _party1ActiveButtons.AddRange(_player1Buttons);
-           _party1ActiveButtons.AddRange(_player2Buttons);
-            _party1ActiveButtons.AddRange(_player3Buttons);
-            _party1ActiveButtons.AddRange(_player4Buttons);
-
-            //Leave Party2ActiveButtons empty, because there is no party 2. Boss is AI!
-        }
-        else
-        {
-            //PVP
-            //Player 1 and 2 on party 1
-            _party1ActiveButtons.AddRange(_player1Buttons);
-            _party1ActiveButtons.AddRange(_player2Buttons);
-
-            //player 3 and 4 on party 2
-            _party2ActiveButtons.AddRange(_player3Buttons);
-            _party2ActiveButtons.AddRange(_player4Buttons);
-        }
-
-        _allNumberKeys = new List<KeyCode>();
-        for(int i = 1; i <= 10; i++)
-        {
-            _allNumberKeys.Add(GetKeycode(
-                JoystickAssignment.Joystick1,
-                i
-                ));
-            _allNumberKeys.Add(GetKeycode(
-                JoystickAssignment.Joystick2,
-                i
-                ));
-            _allNumberKeys.Add(GetKeycode(
-                JoystickAssignment.Joystick3,
-                i
-                ));
-            _allNumberKeys.Add(GetKeycode(
-                JoystickAssignment.Joystick4,
-                i
-                ));
-        }
-
-        _numberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
-        if (AutoInputDualActionMode)
-        {
-            foreach (GameButton gb in _player1Buttons) _numberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-            foreach (GameButton gb in _player2Buttons) _numberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-            foreach (GameButton gb in _player3Buttons) _numberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-            foreach (GameButton gb in _player4Buttons) _numberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-            _numberToLetterKeyMapping[_party1DummyButton.NumberKey] = _party1DummyButton.LetterKey;
-            _numberToLetterKeyMapping[_party2DummyButton.NumberKey] = _party2DummyButton.LetterKey;
-        }
-    }
-
-    List<GameButton> BuildButtonList(KeyCode letterKey, JoystickAssignment ja, List<string> keyOrder)
-    {
-        List<GameButton> gbList = new List<GameButton>();
-
-        for (int i = 0; i < keyOrder.Count; i++)
-        {
-            gbList.Add(new GameButton(
-                letterKey,
-                GetKeycode(ja, i + 1),
-                keyOrder[i]
-                ));
-        }
-
-        return gbList;
-    }
-
-    //Argue over spelling
-
-
-    //When AutoInputDualActionMode is true then we simulate the Button Letter Key input during the active screen.
-
-    public enum JoystickAssignment
-    {
-        Joystick1,
-        Joystick2,
-        Joystick3,
-        Joystick4
-    }
-
-    KeyCode GetKeycode(JoystickAssignment ja, int buttonNumber)
-    {
-        if (ja == JoystickAssignment.Joystick1)
-        {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.A;
-                case 2: return KeyCode.B;
-                case 3: return KeyCode.C;
-                case 4: return KeyCode.D;
-                case 5: return KeyCode.E;
-                case 6: return KeyCode.F;
-                case 7: return KeyCode.G;
-                case 8: return KeyCode.H;
-                case 9: return KeyCode.I;
-                case 10: return KeyCode.J;
-            }
-        }
-        else if (ja == JoystickAssignment.Joystick2)
-        {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.K;
-                case 2: return KeyCode.L;
-                case 3: return KeyCode.M;
-                case 4: return KeyCode.N;
-                case 5: return KeyCode.O;
-                case 6: return KeyCode.P;
-                case 7: return KeyCode.Q;
-                case 8: return KeyCode.R;
-                case 9: return KeyCode.S;
-                case 10: return KeyCode.T;
-            }
-        }
-        else if (ja == JoystickAssignment.Joystick3)
-        {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.U;
-                case 2: return KeyCode.V;
-                case 3: return KeyCode.W;
-                case 4: return KeyCode.X;
-                case 5: return KeyCode.Y;
-                case 6: return KeyCode.Z;
-                case 7: return KeyCode.Comma;
-                case 8: return KeyCode.Period;
-                case 9: return KeyCode.Slash;
-                case 10: return KeyCode.Backslash;
-            }
-        }
-        else if (ja == JoystickAssignment.Joystick4)
-        {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.Alpha1;
-                case 2: return KeyCode.Alpha2;
-                case 3: return KeyCode.Alpha3;
-                case 4: return KeyCode.Alpha4;
-                case 5: return KeyCode.Alpha5;
-                case 6: return KeyCode.Alpha6;
-                case 7: return KeyCode.Alpha7;
-                case 8: return KeyCode.Alpha8;
-                case 9: return KeyCode.Alpha9;
-                case 10: return KeyCode.Alpha0;
-            }
-        }
-        return KeyCode.None;
-    }
-
-    List<GameButton> GetPlayer1Buttons()
-    {
-        return BuildButtonList(
-            _player1LetterKey,
-            _player1JoystickAssignment,
-            new List<string>()
-        {
-            { "Flying Groin Stomp" },
-            { "Aggrevate Old Tap-Dancing Injury" },
-            { "Spray and Pray" },
-            { "Tank and Spank" },
-            { "Falcon Punch!" },
-            { "Overcook the Roast" },
-            { "Put Gum In Hair" },
-            { "360 No Scope" },
-            { "Turn Off and Back On" },
-            { "Kill With Fire" },
-        });
-    }
-
-    List<GameButton> GetPlayer2Buttons()
-    {
-        return BuildButtonList(
-            _player2LetterKey,
-            _player2JoystickAssignment,
-            new List<string>()
-        {
-            { "Scratch Their Bieber CDs" },
-            { "Press Alt + F4" },
-            { "Wet Willy" },
-            { "Don't Send Xmas Card" },
-            { "Don't Touch Anything" },
-            { "Fap Quietly to Food Network" },
-            { "Run in Circles" },
-            { "Kill with Kindness" },
-            { "Tiger's Claw Grasps the Pearls" },
-            { "Flail Wildly" },
-        });
-    }
-
-    List<GameButton> GetPlayer3Buttons()
-    {
-        return BuildButtonList(
-            _player3LetterKey,
-            _player3JoystickAssignment,
-            new List<string>()
-        {
-            { "Execute" },
-            { "Eye Gouge" },
-            { "Long Distance Expectoration" }, //Especially Good Expectoration
-            { "Fake High Five" },
-            { "Release the Kraken" },
-            { "Sweep the Leg" },
-            { "Camp Spawn" },
-            { "420 Blaze 'Em" },
-            { "Shit Self" },
-            { "Spin to Win" },
-        });
-    }
-    
-    List<GameButton> GetPlayer4Buttons()
-    {
-        return BuildButtonList(
-            _player4LetterKey,
-            _player4JoystickAssignment,
-            new List<string>()
-            {
-                { "Grab Pitchfork!" },
-                { "Call Tech Support" },
-                { "Fire da Lazzzoorrr!!!" },
-                { "Smoke (If you got 'em)" },
-                { "Cheat" },
-                { "Rage Silently" },
-                { "Kill the Messenger" },
-                { "Spinning Neck Chop" },
-                { "Farm Jungle" },
-                { "Disenchant Legendary" },
-            });
-    }
-
-    GameButton GetParty1DummyButton()
-    {
-        return new GameButton(_party1DummyLetterKey, _party1DummyNumberKey, "Party 1 Dummy");
-    }
-
-    GameButton GetParty2DummyButton()
-    {
-        return new GameButton(_party2DummyLetterKey, _party2DummyNumberKey, "Party 2 Dummy");
-    }
-
-    List<GameButton> GetParty1Buttons()
-    {
-        List<GameButton> combinedList = new List<GameButton>();
-
-        combinedList.Add(GetParty1DummyButton());
-        combinedList.AddRange(GetPlayer1Buttons());
-        combinedList.AddRange(GetPlayer2Buttons());
-
-        return combinedList;
-    }
-
-    List<GameButton> GetParty2Buttons()
-    {
-        List<GameButton> combinedList = new List<GameButton>();
-
-        combinedList.Add(GetParty2DummyButton());
-        combinedList.AddRange(GetPlayer3Buttons());
-        combinedList.AddRange(GetPlayer4Buttons());
-
-        return combinedList;
-    }
-
-    #endregion
-
     #region Utility Classes and Enums
-
-    public class GameButton
-    {
-        public string Name;
-        public KeyCode LetterKey;
-        public KeyCode NumberKey;
-
-        public GameButton(KeyCode letterKey, KeyCode numberKey, string sName)
-        {
-            this.LetterKey = letterKey;
-            this.NumberKey = numberKey;
-            this.Name = sName;
-        }
-    }
 
     enum GameState
     {
