@@ -53,6 +53,10 @@ public class OptionsPanel : MonoBehaviour {
     void Continue()
     {
         PlayContinueSound();
+        foreach (OptionMenu om in _menus)
+        {
+            om.Script.Destroy();
+        }
     }
 
     public void StartOptions(OptionPanelSettings settings)

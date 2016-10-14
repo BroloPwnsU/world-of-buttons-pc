@@ -29,6 +29,7 @@ public class GameBrain : MonoBehaviour
     #endregion
 
     #region Public Properties
+
     public GameObject MenuSelectorPrefab;
 
     public Text Party1ButtonNameText;
@@ -49,6 +50,8 @@ public class GameBrain : MonoBehaviour
     public GameObject BossPanel;
     public GameObject PlayerPanel;
     public GameObject TimerPanel;
+    public GameObject Party1VictoryPanel;
+    public GameObject Party2VictoryPanel;
 
     public float InitialActiveScreenSeconds;
     public float MinimumActiveScreenSeconds;
@@ -74,6 +77,7 @@ public class GameBrain : MonoBehaviour
     private PartyGroup _party2;
     private TimerPanel _timerPanel;
     private OptionsPanel _buffPanel;
+
     #endregion
 
     // Use this for initialization
@@ -113,7 +117,7 @@ public class GameBrain : MonoBehaviour
             }
             Debug.Log("Key pressed: " + sCombinedKeyDown);
 
-            if (_gameState == GameState.ActiveScreen && _buttonMaster.GetCurrentParty1ActiveButton() != null)
+            if (_gameState == GameState.AttackScreen && _buttonMaster.GetCurrentParty1ActiveButton() != null)
             {
                 GameButton party1Button = _buttonMaster.GetCurrentParty1ActiveButton();
                 Debug.Log("Desired key: " + party1Button.LetterKey + ", " + party1Button.NumberKey);
@@ -173,7 +177,7 @@ public class GameBrain : MonoBehaviour
 
             #endregion
         }
-        else if (_gameState == GameState.ActiveScreen)
+        else if (_gameState == GameState.AttackScreen)
         {
             if (!ReadActiveInput())
             {
@@ -193,7 +197,7 @@ public class GameBrain : MonoBehaviour
             _timeLeft -= Time.deltaTime;
             if (_timeLeft < 0)
             {
-                EndSuccessScreen();
+                EndResolutionScreen();
             }
 
             #endregion
@@ -206,7 +210,7 @@ public class GameBrain : MonoBehaviour
             _timeLeft -= Time.deltaTime;
             if (_timeLeft < 0)
             {
-                EndFailScreen();
+                EndAttackCycle();
             }
 
             #endregion
@@ -382,7 +386,7 @@ public class GameBrain : MonoBehaviour
         _buttonMaster.SetupButtons(_bossFight);
 
         //Prep the player/boss panels for battle.
-        _party1.PrepForBattle(false, _party1StartHealth);
+        _party1.PrepForBattle(_bossFight, _party1StartHealth);
         _party2.PrepForBattle(_bossFight, _party2StartHealth);
 
         //Skip to prep screen
@@ -399,14 +403,14 @@ public class GameBrain : MonoBehaviour
 
     void EndPrepScreen()
     {
-        StartActiveCycle();
+        StartAttackCycle(AttackMode.Normal);
     }
 
-    void StartActiveCycle()
+    void StartAttackCycle(AttackMode attackMode)
     {
         //\left(\left(5-1.5\right)\cdot \left(\frac{1}{\left(.15x+1\right)^2}\right)\ +\ 1.5\right)\cdot 1.05
 
-        _gameState = GameState.ActiveScreen;
+        _gameState = GameState.AttackScreen;
 
         //We want to make the active screen longer in PVP. It's a race against each other, not the clock.
         float fInitialActiveScreenSeconds;
@@ -626,45 +630,47 @@ public class GameBrain : MonoBehaviour
         return false;
     }
 
+    #region Respond to Player Input
+
     void FailByTimeElapsed()
     {
         if (_bossFight)
         {
             //If it's a boss fight, only punish team one... because they are the only team!
-            ApplyDamageToParty1();
+            ApplyDamageToParty1(true);
         }
         else
         {
             //What?! They BOTH failed!
-            ApplyDamageToParty1();
-            ApplyDamageToParty2();
+            ApplyDamageToParty1(true);
+            ApplyDamageToParty2(true);
         }
 
-        BeginFailScreen();
+        BeginResolutionScreen();
     }
 
     void Party1InputFailByButtonPress()
     {
-        ApplyDamageToParty1();
-        BeginFailScreen();
+        ApplyDamageToParty1(true);
+        BeginResolutionScreen();
     }
 
     void Party1InputFailByTie()
     {
         //TODO: Support for TIE screen.
-        ApplyDamageToParty1();
-        BeginFailScreen();
+        ApplyDamageToParty1(true);
+        BeginResolutionScreen();
     }
 
     void Party2InputFailByButtonPress()
     {
-        ApplyDamageToParty2();
-        BeginFailScreen();
+        ApplyDamageToParty2(true);
+        BeginResolutionScreen();
     }
 
     void Party2InputFailByTie()
     {
-        ApplyDamageToParty2();
+        ApplyDamageToParty2(true);
     }
     
     //If both players pressed at the same time... wow! It's a tie! Do something?
@@ -672,24 +678,33 @@ public class GameBrain : MonoBehaviour
     {
         //TODO: What do we do?
         //Fuck it, for now assume party 1 wins
-        BeginFailScreen();
+        BeginResolutionScreen();
     }
 
     void Party1InputSuccess()
     {
         //Party 1 pressed their button. Apply damage to party 2/boss
-        ApplyDamageToParty2();
-        BeginSuccessScreen();
+        ApplyDamageToParty2(false);
+        BeginResolutionScreen();
+    }
+
+    enum AttackSource
+    {
+        Party1Success,
+        Party1Failed,
+        Party2Success,
+        Party2Failed,
+        Boss
     }
 
     //They pressed the correct button. That means success.
     void Party2InputSuccess()
     {
-        ApplyDamageToParty1();
-        BeginSuccessScreen();
+        ApplyDamageToParty1(false);
+        BeginResolutionScreen();
     }
 
-    void BeginSuccessScreen()
+    void BeginResolutionScreen()
     {
         //Set the pause duration.
         _timeLeft = SuccessScreenSeconds;
@@ -697,41 +712,67 @@ public class GameBrain : MonoBehaviour
         _gameState = GameState.SuccessScreen;
     }
 
-    void EndSuccessScreen()
+    void EndResolutionScreen()
     {
-        //Some damage may have occurred against the boss during a success action.
-        //Check to see if the boss died.
-        if (_party2Health <= 0)
+        EndAttackCycle();
+    }
+
+    void EndAttackCycle()
+    {
+        if (_party1Health <= 0 && _party2Health <= 0)
         {
-            EndGameAsVictory();
+            //Double fail!
+            //Go into sudden death.
+            StartSuddenDeath();
+        }
+        else if (_party1Health <= 0)
+        {
+            //Party 1 Died. Was it a boss fight?
+            if (_bossFight)
+            {
+                EndGameAsDefeat();
+            }
+            else
+            {
+                EndGameAsParty2Victory();
+            }
+        }
+        else if (_party2Health <= 0)
+        {
+            //Party 2 Died. Was it a boss fight?
+            if (_bossFight)
+            {
+                EndGameAsVictory();
+            }
+            else
+            {
+                EndGameAsParty1Victory();
+            }
         }
         else
         {
-            //There is still some health. Go back to the active screen.
-            StartActiveCycle();
+            //Nobody died. What a pity. Let's just go back and do it again, shall we?
+            StartAttackCycle(AttackMode.Normal);
         }
     }
 
-    void BeginFailScreen()
+    #endregion
+
+    enum AttackMode
     {
-        _timeLeft = FailScreenSeconds;
-        _currentTimeLeftSeconds = _timeLeft;
-        _gameState = GameState.FailScreen;
+        Normal,
+        SuddenDeath
     }
 
-    void EndFailScreen()
+    void StartSuddenDeath()
     {
-        //Some damage may have occurred against the user during a fail action.
-        //Check to see if the player died.
-        if (_party1Health <= 0)
-        {
-            EndGameAsDefeat();
-        }
-        else
-        {
-            //There is still some health. Go back to a keypress.
-            StartActiveCycle();
-        }
+        //For sudden death, each team gets 1 health. First person to fuck up loses.
+        _party1Health = 1;
+        _party2Health = 1;
+        _party1.RefreshHealth(_party1Health, _party1StartHealth);
+        _party2.RefreshHealth(_party2Health, _party2StartHealth);
+
+        StartAttackCycle(AttackMode.SuddenDeath);
     }
 
     void EndGameAsDefeat()
@@ -744,7 +785,17 @@ public class GameBrain : MonoBehaviour
         _gameState = GameState.VictoryScreen;
     }
 
-    void ApplyDamageToParty1()
+    void EndGameAsParty1Victory()
+    {
+        _gameState = GameState.Party1VictoryScreen;
+    }
+
+    void EndGameAsParty2Victory()
+    {
+        _gameState = GameState.Party2VictoryScreen;
+    }
+
+    void ApplyDamageToParty1(bool bSelfDamage)
     {
         if (_bossFight)
         {
@@ -755,7 +806,8 @@ public class GameBrain : MonoBehaviour
                 BossMaximumDamagePerAttack,
                 0.0f,
                 _party2,
-                _party1
+                _party1,
+                bSelfDamage
                 );
         }
         else
@@ -767,12 +819,13 @@ public class GameBrain : MonoBehaviour
                 PlayerMaximumDamagePerAttack,
                 _buffParty2CritChance,
                 _party2,
-                _party1
+                _party1,
+                bSelfDamage
                 );
         }
     }
 
-    void ApplyDamageToParty2()
+    void ApplyDamageToParty2(bool bSelfDamage)
     {
         _party2Health = ApplyDamage(
             _party2Health,
@@ -781,11 +834,12 @@ public class GameBrain : MonoBehaviour
             PlayerMaximumDamagePerAttack,
             _buffParty1CritChance,
             _party1,
-            _party2
+            _party2,
+            bSelfDamage
             );
     }
 
-    private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroup partyAttack, PartyGroup partyDefend)
+    private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroup partyAttack, PartyGroup partyDefend, bool bSelfDamage)
     {
         //Get a random damage value from within the specific player attack range
         float damage = Mathf.FloorToInt(Random.Range(
@@ -809,13 +863,15 @@ public class GameBrain : MonoBehaviour
             newHealth -= damage;
         }
 
-        partyAttack.MakeAttack(bCrit);
+        if (!bSelfDamage)
+            partyAttack.MakeAttack(bCrit);
 
         partyDefend.TakeDamage(
             damage,
             newHealth,
             startHealth,
-            bCrit
+            bCrit,
+            bSelfDamage
             );
 
         return newHealth;
@@ -823,7 +879,7 @@ public class GameBrain : MonoBehaviour
 
     #endregion
 
-    #region Rendering Methods
+    #region Rendering Game State
 
     void RenderGameState()
     {
@@ -847,6 +903,9 @@ public class GameBrain : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
 
             OptionsPanel.SetActive(false);
             BossPanel.SetActive(false);
@@ -873,6 +932,9 @@ public class GameBrain : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
 
             OptionsPanel.SetActive(true);
             BossPanel.SetActive(false);
@@ -906,11 +968,14 @@ public class GameBrain : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
+
             OptionsPanel.SetActive(false);
             BossPanel.SetActive(true);
             PlayerPanel.SetActive(true);
         }
-        else if (_gameState == GameState.ActiveScreen)
+        else if (_gameState == GameState.AttackScreen)
         {
             ShowText(false, TitleText);
             ShowText(false, BuffText);
@@ -940,6 +1005,9 @@ public class GameBrain : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
+
             OptionsPanel.SetActive(false);
         }
         else if (_gameState == GameState.FailScreen)
@@ -966,6 +1034,9 @@ public class GameBrain : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
+
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
 
             OptionsPanel.SetActive(false);
             BossPanel.SetActive(true);
@@ -996,6 +1067,9 @@ public class GameBrain : MonoBehaviour
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
+
             OptionsPanel.SetActive(false);
             BossPanel.SetActive(true);
             PlayerPanel.SetActive(true);
@@ -1015,6 +1089,9 @@ public class GameBrain : MonoBehaviour
             ShowText(true, YouLoseText);
             ShowText(false, YouWinText);
 
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
+
             OptionsPanel.SetActive(false);
             BossPanel.SetActive(false);
             PlayerPanel.SetActive(false);
@@ -1033,6 +1110,53 @@ public class GameBrain : MonoBehaviour
             ShowText(false, SuccessText);
             ShowText(false, YouLoseText);
             ShowText(true, YouWinText);
+
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(false);
+
+            OptionsPanel.SetActive(false);
+            BossPanel.SetActive(false);
+            PlayerPanel.SetActive(false);
+        }
+        else if (_gameState == GameState.Party1VictoryScreen)
+        {
+            ShowText(false, TitleText);
+            ShowText(false, BuffText);
+            ShowText(false, GetReadyText);
+            TimerPanel.SetActive(false);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
+            ShowText(false, PlayerHealthText);
+            ShowText(false, BossHealthText);
+            ShowText(false, FailText);
+            ShowText(false, SuccessText);
+            ShowText(false, YouLoseText);
+            ShowText(false, YouWinText);
+
+            Party1VictoryPanel.SetActive(true);
+            Party2VictoryPanel.SetActive(false);
+
+            OptionsPanel.SetActive(false);
+            BossPanel.SetActive(false);
+            PlayerPanel.SetActive(false);
+        }
+        else if (_gameState == GameState.Party2VictoryScreen)
+        {
+            ShowText(false, TitleText);
+            ShowText(false, BuffText);
+            ShowText(false, GetReadyText);
+            TimerPanel.SetActive(false);
+            ShowText(false, Party1ButtonNameText);
+            ShowText(false, Party2ButtonNameText);
+            ShowText(false, PlayerHealthText);
+            ShowText(false, BossHealthText);
+            ShowText(false, FailText);
+            ShowText(false, SuccessText);
+            ShowText(false, YouLoseText);
+            ShowText(false, YouWinText);
+
+            Party1VictoryPanel.SetActive(false);
+            Party2VictoryPanel.SetActive(true);
 
             OptionsPanel.SetActive(false);
             BossPanel.SetActive(false);
@@ -1114,8 +1238,10 @@ public class GameBrain : MonoBehaviour
         PrepScreen,
         FailScreen,
         SuccessScreen,
-        ActiveScreen,
+        AttackScreen,
         VictoryScreen,
+        Party1VictoryScreen,
+        Party2VictoryScreen,
         DefeatScreen
     }
 

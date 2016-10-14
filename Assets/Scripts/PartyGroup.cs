@@ -14,8 +14,9 @@ public class PartyGroup : MonoBehaviour
     private AudioSource _audioSource;
     public List<AudioClip> AttackSounds;
     public List<AudioClip> CritSounds;
+    public List<AudioClip> FailSounds;
 
-    private bool _bIsBoss = false;
+    private bool _bIsPVP = false;
     public GameObject PVESpritePanel;
     public GameObject PVPSpritePanel;
 
@@ -42,13 +43,13 @@ public class PartyGroup : MonoBehaviour
         }
     }
 
-    public void PrepForBattle(bool bIsBoss, float StartingHealth)
+    public void PrepForBattle(bool bIsPVP, float StartingHealth)
     {
-        _bIsBoss = bIsBoss;
+        _bIsPVP = bIsPVP;
 
         RefreshHealth(StartingHealth, StartingHealth);
 
-        if (_bIsBoss)
+        if (_bIsPVP)
         {
             PVESpritePanel.SetActive(true);
             PVPSpritePanel.SetActive(false);
@@ -68,6 +69,11 @@ public class PartyGroup : MonoBehaviour
 
     public void MakeAttack(bool bCrit)
     {
+        PlayAttackSound(bCrit);
+    }
+
+    void PlayAttackSound(bool bCrit)
+    {
         if (bCrit)
             _audioSource.PlayOneShot(
                 AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
@@ -80,7 +86,15 @@ public class PartyGroup : MonoBehaviour
                 );
     }
 
-    public void TakeDamage(float damage, float newCurrentHP, float originalHP, bool bCrit)
+    void PlayFailSound()
+    {
+        _audioSource.PlayOneShot(
+            FailSounds[Random.Range(0, FailSounds.Count - 1)],
+            0.1f
+            );
+    }
+
+    public void TakeDamage(float damage, float newCurrentHP, float originalHP, bool bCrit, bool bSelfAttack)
     {
         _healthBar.TakeDamage(damage, false, newCurrentHP, originalHP);
 
@@ -91,5 +105,9 @@ public class PartyGroup : MonoBehaviour
 
         _healthText.text = ((int)newCurrentHP).ToString();
 
+        if (bSelfAttack)
+        {
+            PlayFailSound();
+        }
     }
 }

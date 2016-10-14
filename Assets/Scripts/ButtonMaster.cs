@@ -37,11 +37,6 @@ public class ButtonMaster : MonoBehaviour
     private KeyCode Party1DummyNumberKey = KeyCode.RightParen;
     private KeyCode Party2DummyNumberKey = KeyCode.LeftParen;
 
-    private JoystickAssignment Player1JoystickAssignment = JoystickAssignment.Joystick3;
-    private JoystickAssignment Player2JoystickAssignment = JoystickAssignment.Joystick4;
-    private JoystickAssignment Player3JoystickAssignment = JoystickAssignment.Joystick2;
-    private JoystickAssignment Player4JoystickAssignment = JoystickAssignment.Joystick1;
-
     private GameButton Party1DummyButton;
     private GameButton Party2DummyButton;
     private GameButton Party1CurrentButton;
@@ -327,6 +322,7 @@ public class ButtonMaster : MonoBehaviour
         return KeyCode.None;
     }
 
+    private JoystickAssignment Player1JoystickAssignment = JoystickAssignment.Joystick4;
     public List<GameButton> GetPlayer1Buttons()
     {
         return BuildButtonList(
@@ -347,6 +343,7 @@ public class ButtonMaster : MonoBehaviour
         });
     }
 
+    private JoystickAssignment Player2JoystickAssignment = JoystickAssignment.Joystick3;
     public List<GameButton> GetPlayer2Buttons()
     {
         return BuildButtonList(
@@ -367,6 +364,7 @@ public class ButtonMaster : MonoBehaviour
         });
     }
 
+    private JoystickAssignment Player3JoystickAssignment = JoystickAssignment.Joystick1;
     public List<GameButton> GetPlayer3Buttons()
     {
         return BuildButtonList(
@@ -387,6 +385,7 @@ public class ButtonMaster : MonoBehaviour
         });
     }
 
+    private JoystickAssignment Player4JoystickAssignment = JoystickAssignment.Joystick2;
     public List<GameButton> GetPlayer4Buttons()
     {
         return BuildButtonList(
