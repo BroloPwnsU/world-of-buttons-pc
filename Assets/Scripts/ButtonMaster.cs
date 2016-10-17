@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class ButtonMaster : MonoBehaviour
+public class ButtonMaster
 {
     #region Properties
 

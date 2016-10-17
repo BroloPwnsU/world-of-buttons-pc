@@ -18,6 +18,14 @@ public class TimerPanel : MonoBehaviour
     public void SetTime(float timeLeft, float originalTimeLeft)
     {
         _barScript.SetTime(timeLeft, originalTimeLeft);
-        _timerText.text = timeLeft.ToString(".00");
+
+        if (timeLeft <= 0)
+        {
+            _timerText.text = "0.00";
+        }
+        else
+        {
+            _timerText.text = timeLeft.ToString(".00");
+        }
     }
 }

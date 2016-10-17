@@ -51,12 +51,14 @@ public class MenuSelector : MonoBehaviour {
 
     void Start()
     {
-        Debug.Log("active: " + this.isActiveAndEnabled);
     }
 
     public void Destroy()
     {
-        Destroy(gameObject);
+        Debug.Log("Destorying");
+
+        if (gameObject != null)
+            Destroy(gameObject);
     }
 
     public void ShowMe()

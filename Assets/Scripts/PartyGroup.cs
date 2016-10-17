@@ -74,24 +74,31 @@ public class PartyGroup : MonoBehaviour
 
     void PlayAttackSound(bool bCrit)
     {
-        if (bCrit)
-            _audioSource.PlayOneShot(
-                AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
-                0.1f
-                );
-        else
+        if (bCrit && CritSounds != null && CritSounds.Count > 0)
+        {
             _audioSource.PlayOneShot(
                 CritSounds[Random.Range(0, CritSounds.Count - 1)],
                 0.1f
                 );
+        }
+        else if (AttackSounds != null && AttackSounds.Count > 0)
+        {
+            _audioSource.PlayOneShot(
+                AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
+                0.1f
+                );
+        }
     }
 
     void PlayFailSound()
     {
-        _audioSource.PlayOneShot(
-            FailSounds[Random.Range(0, FailSounds.Count - 1)],
-            0.1f
-            );
+        if (FailSounds != null && FailSounds.Count > 0)
+        {
+            _audioSource.PlayOneShot(
+                FailSounds[Random.Range(0, FailSounds.Count - 1)],
+                0.1f
+                );
+        }
     }
 
     public void TakeDamage(float damage, float newCurrentHP, float originalHP, bool bCrit, bool bSelfAttack)

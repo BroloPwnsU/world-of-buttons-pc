@@ -9,27 +9,23 @@ public class GameBrain : MonoBehaviour
     #region Private Members
 
     private float _timeLeft;
-    private float _currentTimeLeftSeconds;
-    private float _currentActivePeriodSeconds;
-    private int _completedCycles;
     
-    private bool AutoInputDualActionMode = true;
     private ButtonMaster _buttonMaster = new ButtonMaster();
 
     private GameState _gameState;
-    private bool _bossFight = true;
-    private float _party1Health;
-    private float _party1StartHealth;
-    private float _party2Health;
-    private float _party2StartHealth;
+    private bool _bossFight = false;
     private float _buffParty1CritChance = 0;
     private float _buffParty2CritChance = 0;
     private float _buffIncreaseActiveTimeMultiplier = 1;
     private float _buffIncreaseActiveTimePercent = 0;
     private float _buffDecreaseBossHealthPercent = 0;
     private float _buffIncreasePlayerHealthPercent = 0;
+    
+    private float _pvpStartHealth;
+    private float _pveStartHealth;
+    private float _bossStartHealth;
 
-    private List<IGamePanel> _gamePanels = new List<IGamePanel>();
+    private List<GamePanel> _gamePanels = new List<GamePanel>();
 
     #endregion
 
@@ -39,24 +35,16 @@ public class GameBrain : MonoBehaviour
 
     public GameObject MenuSelectorPrefab;
 
-    public Text Party1ButtonNameText;
-    public Text Party2ButtonNameText;
-    public Text SuccessText;
-    public Text FailText;
     public Text TitleText;
     public Text BuffText;
     public Text GetReadyText;
-    public Text PlayerHealthText;
-    public Text BossHealthText;
     public Text YouLoseText;
     public Text YouWinText;
 
     public Text GameStateText;
 
+    public GameObject BattlePanel;
     public GameObject OptionsPanel;
-    public GameObject BossPanel;
-    public GameObject PlayerPanel;
-    public GameObject TimerPanel;
     public GameObject Party1VictoryPanel;
     public GameObject Party2VictoryPanel;
 
@@ -68,9 +56,11 @@ public class GameBrain : MonoBehaviour
     public float SuccessScreenSeconds;
 
     public float BossStartHealth;
+    public float PVPStartHealth;
+    public float PVEStartHealth;
+    
     public float BossMaximumDamagePerAttack;
     public float BossMinimumDamagePerAttack;
-    public float PlayerStartHealth;
     public float PlayerMinimumDamagePerAttack;
     public float PlayerMaximumDamagePerAttack;
     public int PlayerAttacksPerBossAttack;
@@ -80,10 +70,8 @@ public class GameBrain : MonoBehaviour
     public float BuffCritChancePerTier;
     public float BuffNonsense;
 
-    private PartyGroup _party1;
-    private PartyGroup _party2;
-    private TimerPanel _timerPanel;
     private OptionsPanel _buffPanel;
+    private AttackPanel _attackPanel;
 
     #endregion
 
@@ -92,13 +80,29 @@ public class GameBrain : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        //_gameButtonList = GetGameButtonList();
-        _party1 = PlayerPanel.GetComponent<PartyGroup>();
-        _party2 = BossPanel.GetComponent<PartyGroup>();
-        _timerPanel = TimerPanel.GetComponent<TimerPanel>();
-        _buffPanel = OptionsPanel.GetComponent<OptionsPanel>();
+        _buffPanel = this.OptionsPanel.GetComponent<OptionsPanel>();
 
+        AssembleGamePanelsAndScripts();
+
+        //_gameButtonList = GetGameButtonList();
         RevertToTitleScreen();
+    }
+
+    void AssembleGamePanelsAndScripts()
+    {
+        GameObject mainCanvas = GameObject.Find("UITextCanvas");
+        _gamePanels = new List<GamePanel>();
+        foreach (MonoBehaviour gamePanel in mainCanvas.GetComponentsInChildren<MonoBehaviour>(true))
+        {
+            if (gamePanel is GamePanel)
+            {
+                Debug.Log("Panel: " + gamePanel.name);
+                _gamePanels.Add((GamePanel)gamePanel);
+            }
+        }
+
+        _attackPanel = mainCanvas.GetComponentInChildren<AttackPanel>();
+        //_buffPanel = mainCanvas.GetComponentInChildren<OptionsPanel>();
     }
 
     /// <summary>
@@ -161,57 +165,10 @@ public class GameBrain : MonoBehaviour
         }
         else if (_gameState == GameState.AttackScreen)
         {
-            if (!ReadAttackInput())
-            {
-                //If we have not received a keypress, then we make sure they are within the time limit.
-                _timeLeft -= Time.deltaTime;
-                if (_timeLeft < 0)
-                {
-                    FailByTimeElapsed();
-                }
-            }
         }
-        else if (_gameState == GameState.SuccessScreen)
-        {
-            #region Success - Player pressed a correct button.
-
-            //They got the right button. Suspend input for a few seconds while an animation plays.
-            _timeLeft -= Time.deltaTime;
-            if (_timeLeft < 0)
-            {
-                EndResolutionScreen();
-            }
-
-            #endregion
-        }
-        else if (_gameState == GameState.FailScreen)
-        {
-            #region Fail - Player failed to press the right button.
-
-            //They failed. They are bad and should feel bad. Suspend input for a few seconds while an animation plays.
-            _timeLeft -= Time.deltaTime;
-            if (_timeLeft < 0)
-            {
-                EndAttackCycle();
-            }
-
-            #endregion
-        }
-        else if (_gameState == GameState.VictoryScreen)
+        else if (_gameState == GameState.OutcomeScreen)
         {
             #region Showing the victory screen. Press F1 or Esc to go back to title screen.
-
-            //Want to show some stats.
-            if (Input.GetKeyDown(KeyCode.F1) || Input.GetKeyDown(KeyCode.Escape))
-            {
-                RevertToTitleScreen();
-            }
-
-            #endregion
-        }
-        else if (_gameState == GameState.DefeatScreen)
-        {
-            #region Showing the defeat screen. Press F1 or Esc to go back to title screen.
 
             //Want to show some stats.
             if (Input.GetKeyDown(KeyCode.F1) || Input.GetKeyDown(KeyCode.Escape))
@@ -238,11 +195,7 @@ public class GameBrain : MonoBehaviour
     void ResetGameValues()
     {
         _bossFight = true;
-        _party1Health = 0.0f;
-        _party2Health = 0.0f;
-        _completedCycles = 0;
         _timeLeft = 0.0f;
-        _currentTimeLeftSeconds = 0.0f;
 
         _buttonMaster.SetupButtons(_bossFight);
     }
@@ -269,7 +222,7 @@ public class GameBrain : MonoBehaviour
     #endregion
 
     #region State - Title Screen
-    
+
     /// <summary>
     /// Like pressing Reset on the game. Goes back to title screen and clears out the current game.
     /// </summary>
@@ -286,7 +239,7 @@ public class GameBrain : MonoBehaviour
     void RenderTitleScreen()
     {
         //Iterate through the panels to hide them, unless they are on the acceptable list.
-        foreach (IGamePanel gamePanel in _gamePanels)
+        foreach (GamePanel gamePanel in _gamePanels)
         {
             if (gamePanel is TitlePanel)
             {
@@ -330,7 +283,7 @@ public class GameBrain : MonoBehaviour
 
     void RenderGameOptionsScreen()
     {
-        foreach (IGamePanel gamePanel in _gamePanels)
+        foreach (GamePanel gamePanel in _gamePanels)
         {
             if (gamePanel is OptionsPanel)
             {
@@ -416,34 +369,16 @@ public class GameBrain : MonoBehaviour
 
         //If it's a PVP fight then player 1 uses the boss's stats. Otherwise it copies player 1.
         //We do this so the PVP fight lasts a good long while.
-
-        if (!_bossFight)
-        {
-            //Player 2 always has the boss's health level.
-            //Don't apply debuffs/buffs during PVP.
-            _party2StartHealth = BossStartHealth;
-            _party1StartHealth = BossStartHealth;
-        }
-        else
-        {
-            //It's PVE... apply the debuffs to boss health.
-            _party2StartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
-            _party1StartHealth = PlayerStartHealth * (1 + _buffIncreasePlayerHealthPercent);
-        }
-
-        _party2Health = _party2StartHealth;
-        _party1Health = _party1StartHealth;
         
-        //Want to clean up old rendering of things from previous games
-        _party1.RefreshHealth(_party1StartHealth, _party1StartHealth);
-        _party2.RefreshHealth(_party2StartHealth, _party2StartHealth);
+        //Don't apply debuffs/buffs during PVP.
+        _pvpStartHealth = PVPStartHealth;
+
+        //It's PVE... apply the debuffs to boss health.
+        _bossStartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
+        _pveStartHealth = PVEStartHealth * (1 + _buffIncreasePlayerHealthPercent);
 
         //Re-initialize the buttons for the current fight.
         _buttonMaster.SetupButtons(_bossFight);
-
-        //Prep the player/boss panels for battle.
-        _party1.PrepForBattle(_bossFight, _party1StartHealth);
-        _party2.PrepForBattle(_bossFight, _party2StartHealth);
 
         //Skip to prep screen
         BeginPrepScreen();
@@ -462,12 +397,11 @@ public class GameBrain : MonoBehaviour
         RenderPrepScreen();
 
         _timeLeft = PrepScreenSeconds;
-        _currentTimeLeftSeconds = _timeLeft;
     }
 
     void RenderPrepScreen()
     {
-        foreach (IGamePanel gamePanel in _gamePanels)
+        foreach (GamePanel gamePanel in _gamePanels)
         {
             if (gamePanel is GetReadyPanel)
             {
@@ -485,94 +419,42 @@ public class GameBrain : MonoBehaviour
     /// </summary>
     void EndPrepScreen()
     {
-        StartAttackCycle(AttackMode.Normal);
+        StartAttack();
     }
 
     #endregion
 
-    #region State - Attack Cycle
+    #region State - Attack
 
-    enum AttackSource
+    void StartAttack()
     {
-        Party1Success,
-        Party1Failed,
-        Party2Success,
-        Party2Failed,
-        Boss
-    }
-
-    /// <summary>
-    /// Attack Mode changes the behavior of the attack cycle, including special animations and other visuals.
-    /// Functionality does not change.
-    /// </summary>
-    enum AttackMode
-    {
-        Normal,
-        SuddenDeath
-    }
-
-    /// <summary>
-    /// A single attack cycle is the timed period where the players are prompted to press a button. Upon
-    /// pressing a button this cycle ends and a new one is prompted.
-    /// </summary>
-    /// <param name="attackMode"></param>
-    void StartAttackCycle(AttackMode attackMode)
-    {
-        //\left(\left(5-1.5\right)\cdot \left(\frac{1}{\left(.15x+1\right)^2}\right)\ +\ 1.5\right)\cdot 1.05
-
         _gameState = GameState.AttackScreen;
         RenderAttackScreen();
 
-        #region Determine Timer
-
-        //The attack timer starts as a high duration and slowly gets smaller as the game drags on.
-        //We want to make the active screen longer in PVP. It's a race against each other, not the clock.
-        float fMaximumActiveScreenSeconds;
-        if (_bossFight)
-            fMaximumActiveScreenSeconds = InitialActiveScreenSeconds;
-        else
-            fMaximumActiveScreenSeconds = InitialActiveScreenSeconds * 5;
-
-        float fMinimumActiveScreenSeconds;
-        if (_bossFight)
-            fMinimumActiveScreenSeconds = MinimumActiveScreenSeconds;
-        else
-            fMinimumActiveScreenSeconds = MinimumActiveScreenSeconds * 5;
-
-        //Set the time span based on the current cycle.
-        //_currentActivePeriodSeconds = InitialActiveScreenSeconds - (ActiveSecondsDecreasePerCycle * _completedCycles);
-        _currentActivePeriodSeconds = ((fMaximumActiveScreenSeconds - fMinimumActiveScreenSeconds) * (1 / Mathf.Pow(ActiveScreenScalingFactor * _completedCycles + 1, 2)) + fMinimumActiveScreenSeconds) * _buffIncreaseActiveTimeMultiplier;
-
-        //Time Left is the timer that controls the current cycle.
-        //We set current time left and time left to guage the width of the timer bar.
-        _currentTimeLeftSeconds = _currentActivePeriodSeconds;
-        _timeLeft = _currentTimeLeftSeconds;
-
-        #endregion
-
-        #region New Button Selection
-
-        //If this is a boss fight, only pick a button for the first team.
-        // If it's a PVP battle, need to pick a button for each.
-
-        //Start with Party 1, they will need a button regardless
-        _buttonMaster.SelectNewButtonForParty1();
-
-        //Let's check if the game is PVP, then select a button for party 2 (if necessary)
-        if (!_bossFight)
+        BattleSettings battleSettings = new BattleSettings()
         {
-            _buttonMaster.SelectNewButtonForParty2();
-        }
+            BossFight = _bossFight,
+            PVEStartHealth = _pveStartHealth,
+            PVPStartHealth = _pvpStartHealth,
+            BossStartHealth = _bossStartHealth,
+            InitialActiveScreenSeconds = InitialActiveScreenSeconds,
+            MinimumActiveScreenSeconds = MinimumActiveScreenSeconds,
+            ActiveScreenScalingFactor = ActiveScreenScalingFactor,
+            BossMaximumDamagePerAttack = BossMaximumDamagePerAttack,
+            BossMinimumDamagePerAttack = BossMinimumDamagePerAttack,
+            PlayerMinimumDamagePerAttack = PlayerMinimumDamagePerAttack,
+            PlayerMaximumDamagePerAttack = PlayerMaximumDamagePerAttack,
+            BuffIncreaseActiveTimeMultiplier = _buffIncreaseActiveTimeMultiplier,
+            BuffParty1CritChance = _buffParty1CritChance,
+            BuffParty2CritChance = _buffParty2CritChance,
+        };
 
-        #endregion
-
-        //Track number of attack cycles to determine the speed of the timer.
-        _completedCycles++;
+        _attackPanel.StartBattle(_buttonMaster, battleSettings);
     }
 
     void RenderAttackScreen()
     {
-        foreach (IGamePanel gamePanel in _gamePanels)
+        foreach (GamePanel gamePanel in _gamePanels)
         {
             if (gamePanel is AttackPanel)
             {
@@ -585,694 +467,102 @@ public class GameBrain : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Sudden Death gives both foes one last chance to kill each other.
-    /// </summary>
-    void StartSuddenDeath()
-    {
-        //For sudden death, each team gets 1 health. First person to fuck up loses.
-        _party1Health = 1;
-        _party2Health = 1;
-        _party1.RefreshHealth(_party1Health, _party1StartHealth);
-        _party2.RefreshHealth(_party2Health, _party2StartHealth);
+    #endregion
 
-        StartAttackCycle(AttackMode.SuddenDeath);
+    #region State - Victory Panels
+
+    void StartParty1Victory()
+    {
+        _gameState = GameState.OutcomeScreen;
+        RenderParty1Victory();
     }
 
-    void EndAttackCycle()
+    void StartParty2Victory()
     {
-        if (_party1Health <= 0 && _party2Health <= 0)
+        _gameState = GameState.OutcomeScreen;
+        RenderParty2Victory();
+    }
+
+    void StartPVEVictory()
+    {
+        _gameState = GameState.OutcomeScreen;
+        RenderPVEVictory();
+    }
+
+    void StartBossVictory()
+    {
+        _gameState = GameState.OutcomeScreen;
+        RenderBossVictory();
+    }
+
+    void RenderParty1Victory()
+    {
+        foreach (GamePanel gamePanel in _gamePanels)
         {
-            //Double fail!
-            //Go into sudden death.
-            StartSuddenDeath();
-        }
-        else if (_party1Health <= 0)
-        {
-            //Party 1 Died. Was it a boss fight?
-            if (_bossFight)
+            if (gamePanel is Party1VictoryPanel)
             {
-                EndGameAsDefeat();
+                gamePanel.Show();
             }
             else
             {
-                EndGameAsParty2Victory();
+                gamePanel.Hide();
             }
         }
-        else if (_party2Health <= 0)
+    }
+
+    void RenderParty2Victory()
+    {
+        foreach (GamePanel gamePanel in _gamePanels)
         {
-            //Party 2 Died. Was it a boss fight?
-            if (_bossFight)
+            if (gamePanel is Party2VictoryPanel)
             {
-                EndGameAsVictory();
+                gamePanel.Show();
             }
             else
             {
-                EndGameAsParty1Victory();
+                gamePanel.Hide();
             }
-        }
-        else
-        {
-            //Nobody died. What a pity. Let's just go back and do it again, shall we?
-            StartAttackCycle(AttackMode.Normal);
         }
     }
 
-    /// <summary>
-    /// Reads keystrokes during the attack cycle, determines outcome of keystrokes, and dispatches actions.
-    /// </summary>
-    /// <returns>Returns true if the players pressed a key.</returns>
-    bool ReadAttackInput()
+    void RenderPVEVictory()
     {
-        //First thing's first: read all the active button presses. Each joystick button will be represented
-        // by TWO or MORE unique keypress events. We want to register two of them and cross reference to figure
-        // out exactly which key belonging to which player was actually pressed.
-        //If any duplicate letters or numbers, it's a tie. If the letters are on opposite teams, then no
-        // damage is assigned. If they are on the same team, then damage is assigned.
-        // Ties between presses are very unlikely given the fact that hundreds of updates happen per second.
-
-        List<KeyCode> numberKeysPressed = new List<KeyCode>();
-        List<KeyCode> letterKeysPressed = new List<KeyCode>();
-
-        foreach (KeyCode numberKey in _buttonMaster.GetAllNumberKeys())
+        foreach (GamePanel gamePanel in _gamePanels)
         {
-            //Check all possible joystick number keys to look for multiple presses.
-            if (Input.GetKeyDown(numberKey))
+            if (gamePanel is PVEVictoryPanel)
             {
-                //Someone pressed a joystick key!
-                numberKeysPressed.Add(numberKey);
-
-                //If the AutoInput mode is active then we self-populate the letter keys
-                if (AutoInputDualActionMode)
-                {
-                    KeyCode letterKey = _buttonMaster.GetLetterKeyFromNumberKey(numberKey);
-                    if (!letterKeysPressed.Contains(letterKey))
-                        letterKeysPressed.Add(letterKey);
-                }
-            }
-        }
-
-        foreach (KeyCode letterKey in _buttonMaster.GetAllLetterKeys())
-        {
-            //Check all possible letter keys to look for multiple presses.
-            if (Input.GetKeyDown(letterKey))
-            {
-                //Someone pressed a joystick key!
-                letterKeysPressed.Add(letterKey);
-            }
-        }
-
-        if (letterKeysPressed.Count > 0 && numberKeysPressed.Count > 0)
-        {
-            //Somebody pressed at least one joystick key. Oh joy!
-            //First check to see if TWO buttons were pressed
-            if (letterKeysPressed.Count >= 2)
-            {
-                #region Two buttons hit in different sections.
-
-                //If it's a boss fight, then this is an automatic failure, since all players are on the same team.
-                if (_bossFight)
-                {
-                    Party1InputFailByTie();
-                }
-                else
-                {
-                    //Two different players pressed a key. Were they on the same team?
-                    //How many from each team pressed a button?
-                    int wParty1Count = 0;
-                    int wParty2Count = 0;
-                    foreach (KeyCode letterKey in letterKeysPressed)
-                    {
-                        if (_buttonMaster.IsLetterKeyParty1(letterKey))
-                            wParty1Count++;
-                        else if (_buttonMaster.IsLetterKeyParty2(letterKey))
-                            wParty2Count++;
-                    }
-
-                    //Deal damage to whichever team was the bigger assholes.
-                    if (wParty1Count == wParty2Count)
-                    {
-                        //Tie!
-                        //No damage dealt to either team.
-                        BothPartyInputTie();
-                    }
-                    else if (wParty2Count > wParty1Count)
-                    {
-                        Party2InputFailByTie();
-                    }
-                    else if (wParty1Count > wParty2Count)
-                    {
-                        Party1InputFailByTie();
-                    }
-                }
-                #endregion
-                return true;
-            }
-            else if (numberKeysPressed.Count >= 2)
-            {
-                #region Two buttons hit in the same section
-
-                //If it's a boss fight, then this is an automatic failure, since all players are on the same team.
-                if (_bossFight)
-                {
-                    Party1InputFailByTie();
-                }
-                else
-                {
-                    KeyCode letterKey = letterKeysPressed[0];
-
-                    //One player pressed more than one key. Which team were they on?
-                    if (_buttonMaster.IsLetterKeyParty1(letterKey))
-                    {
-                        Party1InputFailByTie();
-                    }
-                    else if (_buttonMaster.IsLetterKeyParty1(letterKey))
-                    {
-                        Party2InputFailByTie();
-                    }
-                }
-                #endregion
-                return true;
+                gamePanel.Show();
             }
             else
             {
-                #region Single button pressed. Was it correct?
-
-                if (_bossFight)
-                {
-                    if (_buttonMaster.IsCurrentButtonParty1(letterKeysPressed[0], numberKeysPressed[0]))
-                    {
-                        //Correct key pressed!
-                        Party1InputSuccess();
-                    }
-                    else
-                    {
-                        Party1InputFailByButtonPress();
-                    }
-                }
-                else
-                {
-                    KeyCode letterKey = letterKeysPressed[0];
-                    KeyCode numberKey = numberKeysPressed[0];
-
-
-                    if (_buttonMaster.IsLetterKeyParty1(letterKey))
-                    {
-                        //Pressed by party 1. Was it correct?
-                        if (_buttonMaster.IsCurrentButtonParty1(letterKey, numberKey))
-                        {
-                            //Success!
-                            Party1InputSuccess();
-                        }
-                        else
-                        {
-                            //They pressed the wrong button
-                            Party1InputFailByButtonPress();
-                        }
-                    }
-                    else if (_buttonMaster.IsLetterKeyParty2(letterKey))
-                    {
-                        //Pressed by party 2. Was it correct?
-                        if (_buttonMaster.IsCurrentButtonParty2(letterKey, numberKey))
-                        {
-                            //Success!
-                            Party2InputSuccess();
-                        }
-                        else
-                        {
-                            //They pressed the wrong button
-                            Party2InputFailByButtonPress();
-                        }
-                    }
-                    else
-                    {
-                        //Somebody pressed a key, but it wasn't either of the parties.
-                        //Ignore it. Pretend nothing happened.
-                    }
-                }
-                #endregion
-                return true;
+                gamePanel.Hide();
             }
         }
-
-        //No key was pressed, so return false;
-        return false;
     }
 
-    #region Respond to Player Input
-
-    void FailByTimeElapsed()
+    void RenderBossVictory()
     {
-        if (_bossFight)
+        foreach (GamePanel gamePanel in _gamePanels)
         {
-            //If it's a boss fight, only punish team one... because they are the only team!
-            ApplyDamageToParty1(true);
+            if (gamePanel is BossVictoryPanel)
+            {
+                gamePanel.Show();
+            }
+            else
+            {
+                gamePanel.Hide();
+            }
         }
-        else
-        {
-            //What?! They BOTH failed!
-            ApplyDamageToParty1(true);
-            ApplyDamageToParty2(true);
-        }
-
-        BeginResolutionScreen();
-    }
-
-    void Party1InputFailByButtonPress()
-    {
-        ApplyDamageToParty1(true);
-        BeginResolutionScreen();
-    }
-
-    void Party1InputFailByTie()
-    {
-        //TODO: Support for TIE screen.
-        ApplyDamageToParty1(true);
-        BeginResolutionScreen();
-    }
-
-    void Party2InputFailByButtonPress()
-    {
-        ApplyDamageToParty2(true);
-        BeginResolutionScreen();
-    }
-
-    void Party2InputFailByTie()
-    {
-        ApplyDamageToParty2(true);
-    }
-    
-    //If both players pressed at the same time... wow! It's a tie! Do something?
-    void BothPartyInputTie()
-    {
-        //TODO: What do we do?
-        //Fuck it, for now assume party 1 wins
-        BeginResolutionScreen();
-    }
-
-    void Party1InputSuccess()
-    {
-        //Party 1 pressed their button. Apply damage to party 2/boss
-        ApplyDamageToParty2(false);
-        BeginResolutionScreen();
-    }
-
-    //They pressed the correct button. That means success.
-    void Party2InputSuccess()
-    {
-        ApplyDamageToParty1(false);
-        BeginResolutionScreen();
-    }
-
-
-    void EndGameAsDefeat()
-    {
-        _gameState = GameState.DefeatScreen;
-    }
-
-    void EndGameAsVictory()
-    {
-        _gameState = GameState.VictoryScreen;
-    }
-
-    void EndGameAsParty1Victory()
-    {
-        _gameState = GameState.Party1VictoryScreen;
-    }
-
-    void EndGameAsParty2Victory()
-    {
-        _gameState = GameState.Party2VictoryScreen;
-    }
-
-    void ApplyDamageToParty1(bool bSelfDamage)
-    {
-        if (_bossFight)
-        {
-            _party1Health = ApplyDamage(
-                _party1Health,
-                _party1StartHealth,
-                BossMinimumDamagePerAttack,
-                BossMaximumDamagePerAttack,
-                0.0f,
-                _party2,
-                _party1,
-                bSelfDamage
-                );
-        }
-        else
-        {
-            _party1Health = ApplyDamage(
-                _party1Health,
-                _party1StartHealth,
-                PlayerMinimumDamagePerAttack,
-                PlayerMaximumDamagePerAttack,
-                _buffParty2CritChance,
-                _party2,
-                _party1,
-                bSelfDamage
-                );
-        }
-    }
-
-    void ApplyDamageToParty2(bool bSelfDamage)
-    {
-        _party2Health = ApplyDamage(
-            _party2Health,
-            _party2StartHealth,
-            PlayerMinimumDamagePerAttack,
-            PlayerMaximumDamagePerAttack,
-            _buffParty1CritChance,
-            _party1,
-            _party2,
-            bSelfDamage
-            );
-    }
-
-    private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroup partyAttack, PartyGroup partyDefend, bool bSelfDamage)
-    {
-        //Get a random damage value from within the specific player attack range
-        float damage = Mathf.FloorToInt(UnityEngine.Random.Range(
-            minimumDamage,
-            maximumDamage
-            ));
-
-        //Determine if it's a crit.
-        bool bCrit = UnityEngine.Random.Range(0.0f, 1.0f) < critPercent;
-        if (bCrit)
-            damage *= 2.0f;
-
-        float newHealth = currentHealth;
-        if (damage >= currentHealth)
-        {
-            damage = currentHealth;
-            newHealth = 0;
-        }
-        else
-        {
-            newHealth -= damage;
-        }
-
-        if (!bSelfDamage)
-            partyAttack.MakeAttack(bCrit);
-
-        partyDefend.TakeDamage(
-            damage,
-            newHealth,
-            startHealth,
-            bCrit,
-            bSelfDamage
-            );
-
-        return newHealth;
     }
 
     #endregion
 
-    #endregion
-    
     #region Rendering Game State
 
     void RenderGameState()
     {
         ShowText(true, GameStateText);
         GameStateText.text = _gameState.ToString();
-
-        if (_gameState == GameState.TitleScreen)
-        {
-            ShowText(true, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-
-            TimerPanel.SetActive(false);
-
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-
-            ShowText(false, PlayerHealthText);
-            ShowText(false, BossHealthText);
-
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(false);
-            PlayerPanel.SetActive(false);
-        }
-        else if (_gameState == GameState.OptionsScreen)
-        {
-            OptionsPanel.SetActive(true);
-
-            ShowText(false, TitleText);
-            ShowText(true, BuffText);
-            UpdateBuffText();
-
-            ShowText(false, GetReadyText);
-
-            TimerPanel.SetActive(false);
-
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-
-            ShowText(false, PlayerHealthText);
-            ShowText(false, BossHealthText);
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(true);
-            BossPanel.SetActive(false);
-            PlayerPanel.SetActive(false);
-        }
-        else if (_gameState == GameState.PrepScreen)
-        {
-            OptionsPanel.SetActive(false);
-
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(true, GetReadyText);
-
-            //Render Timer
-            TimerPanel.SetActive(true);
-            UpdateTimeLeftText();
-
-            //Render Player Health
-            UpdatePlayerHealthText();
-            ShowText(true, PlayerHealthText);
-
-            //Render Boss Health
-            UpdateBossHealthText();
-            ShowText(true, BossHealthText);
-
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(true);
-            PlayerPanel.SetActive(true);
-        }
-        else if (_gameState == GameState.AttackScreen)
-        {
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-
-            //Render Timer
-            TimerPanel.SetActive(true);
-            UpdateTimeLeftText();
-
-            //Render Current Active Key
-            UpdateButtonNameText();
-            ShowText(true, Party1ButtonNameText);
-            ShowText(!_bossFight, Party2ButtonNameText);
-
-
-            //Render Player Health
-            BossPanel.SetActive(true);
-            PlayerPanel.SetActive(true);
-
-            //Render Boss Health
-            UpdateBossHealthText();
-            ShowText(true, BossHealthText);
-
-            //Hide Success and Failure Text
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-        }
-        else if (_gameState == GameState.FailScreen)
-        {
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-
-            //Render Timer
-            TimerPanel.SetActive(false);
-
-            //Render Player Health
-            UpdatePlayerHealthText();
-            ShowText(true, PlayerHealthText);
-
-            //Render Boss Health
-            UpdateBossHealthText();
-            ShowText(true, BossHealthText);
-
-            //Show Fail text
-            ShowText(true, FailText);
-            ShowText(false, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(true);
-            PlayerPanel.SetActive(true);
-        }
-        else if (_gameState == GameState.SuccessScreen)
-        {
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-
-            //Render Timer
-            TimerPanel.SetActive(false);
-
-            //Render Player Health
-            UpdatePlayerHealthText();
-            ShowText(true, PlayerHealthText);
-
-            //Render Boss Health
-            UpdateBossHealthText();
-            ShowText(true, BossHealthText);
-
-            //Show Success text
-            ShowText(false, FailText);
-            ShowText(true, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(true);
-            PlayerPanel.SetActive(true);
-        }
-        else if (_gameState == GameState.DefeatScreen)
-        {
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-            TimerPanel.SetActive(false);
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-            ShowText(false, PlayerHealthText);
-            ShowText(false, BossHealthText);
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
-            ShowText(true, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(false);
-            PlayerPanel.SetActive(false);
-        }
-        else if (_gameState == GameState.VictoryScreen)
-        {
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-            TimerPanel.SetActive(false);
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-            ShowText(false, PlayerHealthText);
-            ShowText(false, BossHealthText);
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(true, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(false);
-            PlayerPanel.SetActive(false);
-        }
-        else if (_gameState == GameState.Party1VictoryScreen)
-        {
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-            TimerPanel.SetActive(false);
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-            ShowText(false, PlayerHealthText);
-            ShowText(false, BossHealthText);
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(true);
-            Party2VictoryPanel.SetActive(false);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(false);
-            PlayerPanel.SetActive(false);
-        }
-        else if (_gameState == GameState.Party2VictoryScreen)
-        {
-            ShowText(false, TitleText);
-            ShowText(false, BuffText);
-            ShowText(false, GetReadyText);
-            TimerPanel.SetActive(false);
-            ShowText(false, Party1ButtonNameText);
-            ShowText(false, Party2ButtonNameText);
-            ShowText(false, PlayerHealthText);
-            ShowText(false, BossHealthText);
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
-            ShowText(false, YouLoseText);
-            ShowText(false, YouWinText);
-
-            Party1VictoryPanel.SetActive(false);
-            Party2VictoryPanel.SetActive(true);
-
-            OptionsPanel.SetActive(false);
-            BossPanel.SetActive(false);
-            PlayerPanel.SetActive(false);
-        }
     }
 
     void UpdateBuffText()
@@ -1286,33 +576,6 @@ public class GameBrain : MonoBehaviour
             ((int)(100 * _buffParty1CritChance)).ToString(),
             ((int)(100 * _buffParty2CritChance)).ToString()
             );
-    }
-
-    void UpdateTimeLeftText()
-    {
-        _timerPanel.SetTime(_timeLeft, _currentTimeLeftSeconds);
-    }
-
-    void UpdateButtonNameText()
-    {
-        //Always show player 1 button commands
-        Party1ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
-
-        if (!_bossFight)
-        {
-            //If PVP, Show both button commands
-            Party2ButtonNameText.text = _buttonMaster.GetCurrentParty2ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty2ActiveButton().NumberKey.ToString();
-        }
-    }
-
-    void UpdatePlayerHealthText()
-    {
-        PlayerHealthText.text = ((int)_party1Health).ToString();
-    }
-
-    void UpdateBossHealthText()
-    {
-        BossHealthText.text = ((int)_party2Health).ToString();
     }
 
     #endregion
@@ -1353,6 +616,7 @@ public class GameBrain : MonoBehaviour
 
     void LogInputKeyPress()
     {
+        return;
         if (Input.anyKeyDown)
         {
             string sCombinedKeyDown = "";
@@ -1379,13 +643,8 @@ public class GameBrain : MonoBehaviour
         TitleScreen,
         OptionsScreen,
         PrepScreen,
-        FailScreen,
-        SuccessScreen,
         AttackScreen,
-        VictoryScreen,
-        Party1VictoryScreen,
-        Party2VictoryScreen,
-        DefeatScreen
+        OutcomeScreen
     }
 
     #endregion

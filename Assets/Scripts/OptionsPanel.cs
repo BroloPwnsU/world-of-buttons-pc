@@ -13,45 +13,53 @@ public class OptionsPanel : GamePanel {
     public Text OptionsHeaderText;
     public GameObject _menuSelectorPrefab;
 
+    private bool _panelActive = false;
+
     // Use this for initialization
     void Awake ()
     {
+        _panelActive = false;
         _audioSource = GetComponent<AudioSource>();
 	}
 	
 	// Update is called once per frame
 	void Update ()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (_panelActive)
         {
-            //Move Up in menu.
-            MoveUp();
-        }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            //Move Down in menu.
-            MoveDown();
-        }
-        else if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            //Move Left in menu.
-            MoveLeft();
-        }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            //Move Right in menu.
-            MoveRight();
-        }
-        else if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
-        {
-            //Pressed enter. Only works when hovering on the Continue button.
-            Continue();
-            
+            if (Input.GetKeyDown(KeyCode.UpArrow))
+            {
+                //Move Up in menu.
+                MoveUp();
+            }
+            else if (Input.GetKeyDown(KeyCode.DownArrow))
+            {
+                //Move Down in menu.
+                MoveDown();
+            }
+            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                //Move Left in menu.
+                MoveLeft();
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                //Move Right in menu.
+                MoveRight();
+            }
+            else if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
+            {
+                if (gameObject.activeSelf)
+                    //Pressed enter. Only works when hovering on the Continue button.
+                    Continue();
+            }
         }
     }
 
     void Continue()
     {
+        _panelActive = false;
+
         PlayContinueSound();
         foreach (OptionMenu om in _menus)
         {
@@ -96,6 +104,8 @@ public class OptionsPanel : GamePanel {
 
             _menuIndex = 0;
         }
+
+        _panelActive = true;
     }
 
     public Dictionary<string, string> GetSelectedOptions()
