@@ -343,6 +343,16 @@ public class ButtonMaster : MonoBehaviour
         });
     }
 
+    public bool IsResetKey()
+    {
+        return Input.GetKeyDown(KeyCode.Minus);
+    }
+
+    public bool IsStartKey()
+    {
+        return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+    }
+
     private JoystickAssignment Player2JoystickAssignment = JoystickAssignment.Joystick3;
     public List<GameButton> GetPlayer2Buttons()
     {

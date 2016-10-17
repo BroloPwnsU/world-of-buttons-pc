@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
@@ -6,6 +7,7 @@ using System.Collections.Generic;
 public class GameBrain : MonoBehaviour
 {
     #region Private Members
+
     private float _timeLeft;
     private float _currentTimeLeftSeconds;
     private float _currentActivePeriodSeconds;
@@ -26,9 +28,14 @@ public class GameBrain : MonoBehaviour
     private float _buffIncreaseActiveTimePercent = 0;
     private float _buffDecreaseBossHealthPercent = 0;
     private float _buffIncreasePlayerHealthPercent = 0;
+
+    private List<IGamePanel> _gamePanels = new List<IGamePanel>();
+
     #endregion
 
     #region Public Properties
+
+    public bool DebugMode = true;
 
     public GameObject MenuSelectorPrefab;
 
@@ -80,6 +87,8 @@ public class GameBrain : MonoBehaviour
 
     #endregion
 
+    #region Unity Built-In Functions
+
     // Use this for initialization
     void Start()
     {
@@ -92,47 +101,22 @@ public class GameBrain : MonoBehaviour
         RevertToTitleScreen();
     }
 
-    // Update is called once per frame
-
-    IEnumerator Example()
-    {
-        print(Time.time);
-        yield return new WaitForSeconds(2);
-        print(Time.time);
-        EndOptionsScreen();
-    }
-
+    /// <summary>
+    /// Update will drive the game. It reads input then sends out instructions to change visuals and game state.
+    /// Need to alter this and all subsequent functions to directly affect the visibility and activation of panels.
+    /// </summary>
     void Update()
     {
-        if (Input.anyKeyDown)
+        //Debugging.
+        if (DebugMode)
         {
-            string sCombinedKeyDown = "";
-            foreach (KeyCode kcode in System.Enum.GetValues(typeof(KeyCode)))
-            {
-                if (Input.GetKeyDown(kcode))
-                {
-                    sCombinedKeyDown += kcode + ", ";
-                    sCombinedKeyDown += _buttonMaster.GetLetterKeyFromNumberKey(kcode) + ", ";
-                }
-            }
-            Debug.Log("Key pressed: " + sCombinedKeyDown);
-
-            if (_gameState == GameState.AttackScreen && _buttonMaster.GetCurrentParty1ActiveButton() != null)
-            {
-                GameButton party1Button = _buttonMaster.GetCurrentParty1ActiveButton();
-                Debug.Log("Desired key: " + party1Button.LetterKey + ", " + party1Button.NumberKey);
-            }
+            LogInputKeyPress();
         }
 
         //If at any time they hit the escape key it goes back to the title screen.
         // This doesn't care about current game state.
-        if (Input.GetKeyDown(KeyCode.Minus))
-        {
-            RevertToTitleScreen();
-            RenderGameState();
-            return;
-        }
-
+        CheckResetButton();
+        
         //All other key commands are dependent on the game state.
         if (_gameState == GameState.TitleScreen)
         {
@@ -140,7 +124,7 @@ public class GameBrain : MonoBehaviour
 
             //From the title screen, only the attendant can actually start the game.
             //Attendant must press Enter to start.
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            if (_buttonMaster.IsStartKey())
             {
                 StartGame();
             }
@@ -153,12 +137,10 @@ public class GameBrain : MonoBehaviour
 
             //Players are not allowed to do anything during this period.
             //Since they don't have anything to do, we will just wait for the enter key to be pressed.
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+            if (_buttonMaster.IsStartKey())
             {
-                StartCoroutine(Example());
+                EndOptionsScreen();
             }
-
-            ///NOT IMPLEMENTED
 
             #endregion
         }
@@ -179,7 +161,7 @@ public class GameBrain : MonoBehaviour
         }
         else if (_gameState == GameState.AttackScreen)
         {
-            if (!ReadActiveInput())
+            if (!ReadAttackInput())
             {
                 //If we have not received a keypress, then we make sure they are within the time limit.
                 _timeLeft -= Time.deltaTime;
@@ -249,6 +231,8 @@ public class GameBrain : MonoBehaviour
         RenderGameState();
     }
 
+    #endregion
+
     #region Startup
 
     void ResetGameValues()
@@ -264,34 +248,99 @@ public class GameBrain : MonoBehaviour
     }
 
     #endregion
-    
-    #region Game Logic
 
+    ///State Management
+
+    #region State Agnostic
+
+    /// <summary>
+    /// Checks for the reset button and reverts to the title screen, regardless of game state.
+    /// </summary>
+    void CheckResetButton()
+    {
+        if (_buttonMaster.IsResetKey())
+        {
+            RevertToTitleScreen();
+            RenderGameState();
+            return;
+        }
+    }
+
+    #endregion
+
+    #region State - Title Screen
+    
+    /// <summary>
+    /// Like pressing Reset on the game. Goes back to title screen and clears out the current game.
+    /// </summary>
     void RevertToTitleScreen()
     {
         _gameState = GameState.TitleScreen;
         ResetGameValues();
+        RenderTitleScreen();
     }
 
+    /// <summary>
+    /// Show the title, hide everything else.
+    /// </summary>
+    void RenderTitleScreen()
+    {
+        //Iterate through the panels to hide them, unless they are on the acceptable list.
+        foreach (IGamePanel gamePanel in _gamePanels)
+        {
+            if (gamePanel is TitlePanel)
+            {
+                gamePanel.Show();
+            }
+            else
+            {
+                gamePanel.Hide();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Leave the title screen and go to options.
+    /// </summary>
     void StartGame()
     {
         StartOptionsScreen();
     }
 
+    #endregion
+
+    #region State - Game Options
+
     void StartOptionsScreen()
     {
         _gameState = GameState.OptionsScreen;
+        RenderGameOptionsScreen();
 
         _buffPanel.StartOptions(GetOptionsSettings());
 
         //Assign some random values for now
         _bossFight = true;
-        _buffIncreaseActiveTimePercent = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
+        _buffIncreaseActiveTimePercent = UnityEngine.Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
         _buffIncreaseActiveTimeMultiplier = 1 + _buffIncreaseActiveTimePercent;
-        _buffDecreaseBossHealthPercent = Random.Range(0, 5) * (0.01f * BuffBossHealthDecreasePercentPerTier);
-        _buffIncreasePlayerHealthPercent = Random.Range(0, 5) * (0.01f * BuffPlayerHealthIncreasePercentPerTier);
-        _buffParty1CritChance = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
-        _buffParty2CritChance = Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
+        _buffDecreaseBossHealthPercent = UnityEngine.Random.Range(0, 5) * (0.01f * BuffBossHealthDecreasePercentPerTier);
+        _buffIncreasePlayerHealthPercent = UnityEngine.Random.Range(0, 5) * (0.01f * BuffPlayerHealthIncreasePercentPerTier);
+        _buffParty1CritChance = UnityEngine.Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
+        _buffParty2CritChance = UnityEngine.Random.Range(0, 5) * (0.01f * BuffCritChancePerTier);
+    }
+
+    void RenderGameOptionsScreen()
+    {
+        foreach (IGamePanel gamePanel in _gamePanels)
+        {
+            if (gamePanel is OptionsPanel)
+            {
+                gamePanel.Show();
+            }
+            else
+            {
+                gamePanel.Hide();
+            }
+        }
     }
 
     private string OPTION_MENU_MODE = "MODE";
@@ -339,6 +388,14 @@ public class GameBrain : MonoBehaviour
 
     void EndOptionsScreen()
     {
+        StartCoroutine(UnthreadedDelay(1.1f, ApplyGameOptions));
+    }
+
+    /// <summary>
+    /// Reads in selected options from the options panel.
+    /// </summary>
+    void ApplyGameOptions()
+    {
         //First just figure out if it's a boss fight or not.
         Dictionary<string, string> selectedOptions = _buffPanel.GetSelectedOptions();
         foreach (string sKey in selectedOptions.Keys)
@@ -354,7 +411,6 @@ public class GameBrain : MonoBehaviour
         {
             _bossFight = false;
         }
-
 
         //Apply health buffs/debuffs to starting health meters
 
@@ -393,31 +449,89 @@ public class GameBrain : MonoBehaviour
         BeginPrepScreen();
     }
 
+    #endregion
+
+    #region State - Prep / Get Ready
+
+    /// <summary>
+    /// Prep screen is the countdown before the game starts, after the options and loading screens, before the active screen.
+    /// </summary>
     void BeginPrepScreen()
     {
         _gameState = GameState.PrepScreen;
+        RenderPrepScreen();
+
         _timeLeft = PrepScreenSeconds;
         _currentTimeLeftSeconds = _timeLeft;
-
     }
 
+    void RenderPrepScreen()
+    {
+        foreach (IGamePanel gamePanel in _gamePanels)
+        {
+            if (gamePanel is GetReadyPanel)
+            {
+                gamePanel.Show();
+            }
+            else
+            {
+                gamePanel.Hide();
+            }
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
     void EndPrepScreen()
     {
         StartAttackCycle(AttackMode.Normal);
     }
 
+    #endregion
+
+    #region State - Attack Cycle
+
+    enum AttackSource
+    {
+        Party1Success,
+        Party1Failed,
+        Party2Success,
+        Party2Failed,
+        Boss
+    }
+
+    /// <summary>
+    /// Attack Mode changes the behavior of the attack cycle, including special animations and other visuals.
+    /// Functionality does not change.
+    /// </summary>
+    enum AttackMode
+    {
+        Normal,
+        SuddenDeath
+    }
+
+    /// <summary>
+    /// A single attack cycle is the timed period where the players are prompted to press a button. Upon
+    /// pressing a button this cycle ends and a new one is prompted.
+    /// </summary>
+    /// <param name="attackMode"></param>
     void StartAttackCycle(AttackMode attackMode)
     {
         //\left(\left(5-1.5\right)\cdot \left(\frac{1}{\left(.15x+1\right)^2}\right)\ +\ 1.5\right)\cdot 1.05
 
         _gameState = GameState.AttackScreen;
+        RenderAttackScreen();
 
+        #region Determine Timer
+
+        //The attack timer starts as a high duration and slowly gets smaller as the game drags on.
         //We want to make the active screen longer in PVP. It's a race against each other, not the clock.
-        float fInitialActiveScreenSeconds;
+        float fMaximumActiveScreenSeconds;
         if (_bossFight)
-            fInitialActiveScreenSeconds = InitialActiveScreenSeconds;
+            fMaximumActiveScreenSeconds = InitialActiveScreenSeconds;
         else
-            fInitialActiveScreenSeconds = InitialActiveScreenSeconds * 5;
+            fMaximumActiveScreenSeconds = InitialActiveScreenSeconds * 5;
 
         float fMinimumActiveScreenSeconds;
         if (_bossFight)
@@ -425,14 +539,18 @@ public class GameBrain : MonoBehaviour
         else
             fMinimumActiveScreenSeconds = MinimumActiveScreenSeconds * 5;
 
-
-
         //Set the time span based on the current cycle.
         //_currentActivePeriodSeconds = InitialActiveScreenSeconds - (ActiveSecondsDecreasePerCycle * _completedCycles);
-        _currentActivePeriodSeconds = ((fInitialActiveScreenSeconds - fMinimumActiveScreenSeconds) * (1 / Mathf.Pow(ActiveScreenScalingFactor * _completedCycles + 1, 2)) + fMinimumActiveScreenSeconds) * _buffIncreaseActiveTimeMultiplier;
+        _currentActivePeriodSeconds = ((fMaximumActiveScreenSeconds - fMinimumActiveScreenSeconds) * (1 / Mathf.Pow(ActiveScreenScalingFactor * _completedCycles + 1, 2)) + fMinimumActiveScreenSeconds) * _buffIncreaseActiveTimeMultiplier;
 
-        _timeLeft = _currentActivePeriodSeconds;
-        _currentTimeLeftSeconds = _timeLeft;
+        //Time Left is the timer that controls the current cycle.
+        //We set current time left and time left to guage the width of the timer bar.
+        _currentTimeLeftSeconds = _currentActivePeriodSeconds;
+        _timeLeft = _currentTimeLeftSeconds;
+
+        #endregion
+
+        #region New Button Selection
 
         //If this is a boss fight, only pick a button for the first team.
         // If it's a PVP battle, need to pick a button for each.
@@ -446,14 +564,85 @@ public class GameBrain : MonoBehaviour
             _buttonMaster.SelectNewButtonForParty2();
         }
 
+        #endregion
+
+        //Track number of attack cycles to determine the speed of the timer.
         _completedCycles++;
     }
 
+    void RenderAttackScreen()
+    {
+        foreach (IGamePanel gamePanel in _gamePanels)
+        {
+            if (gamePanel is AttackPanel)
+            {
+                gamePanel.Show();
+            }
+            else
+            {
+                gamePanel.Hide();
+            }
+        }
+    }
+
     /// <summary>
-    /// Handles player input during the active screen state.
+    /// Sudden Death gives both foes one last chance to kill each other.
     /// </summary>
-    /// <returns>Retursn true if the players pressed a key.</returns>
-    bool ReadActiveInput()
+    void StartSuddenDeath()
+    {
+        //For sudden death, each team gets 1 health. First person to fuck up loses.
+        _party1Health = 1;
+        _party2Health = 1;
+        _party1.RefreshHealth(_party1Health, _party1StartHealth);
+        _party2.RefreshHealth(_party2Health, _party2StartHealth);
+
+        StartAttackCycle(AttackMode.SuddenDeath);
+    }
+
+    void EndAttackCycle()
+    {
+        if (_party1Health <= 0 && _party2Health <= 0)
+        {
+            //Double fail!
+            //Go into sudden death.
+            StartSuddenDeath();
+        }
+        else if (_party1Health <= 0)
+        {
+            //Party 1 Died. Was it a boss fight?
+            if (_bossFight)
+            {
+                EndGameAsDefeat();
+            }
+            else
+            {
+                EndGameAsParty2Victory();
+            }
+        }
+        else if (_party2Health <= 0)
+        {
+            //Party 2 Died. Was it a boss fight?
+            if (_bossFight)
+            {
+                EndGameAsVictory();
+            }
+            else
+            {
+                EndGameAsParty1Victory();
+            }
+        }
+        else
+        {
+            //Nobody died. What a pity. Let's just go back and do it again, shall we?
+            StartAttackCycle(AttackMode.Normal);
+        }
+    }
+
+    /// <summary>
+    /// Reads keystrokes during the attack cycle, determines outcome of keystrokes, and dispatches actions.
+    /// </summary>
+    /// <returns>Returns true if the players pressed a key.</returns>
+    bool ReadAttackInput()
     {
         //First thing's first: read all the active button presses. Each joystick button will be represented
         // by TWO or MORE unique keypress events. We want to register two of them and cross reference to figure
@@ -461,7 +650,7 @@ public class GameBrain : MonoBehaviour
         //If any duplicate letters or numbers, it's a tie. If the letters are on opposite teams, then no
         // damage is assigned. If they are on the same team, then damage is assigned.
         // Ties between presses are very unlikely given the fact that hundreds of updates happen per second.
-        
+
         List<KeyCode> numberKeysPressed = new List<KeyCode>();
         List<KeyCode> letterKeysPressed = new List<KeyCode>();
 
@@ -568,7 +757,7 @@ public class GameBrain : MonoBehaviour
             else
             {
                 #region Single button pressed. Was it correct?
-                
+
                 if (_bossFight)
                 {
                     if (_buttonMaster.IsCurrentButtonParty1(letterKeysPressed[0], numberKeysPressed[0]))
@@ -688,15 +877,6 @@ public class GameBrain : MonoBehaviour
         BeginResolutionScreen();
     }
 
-    enum AttackSource
-    {
-        Party1Success,
-        Party1Failed,
-        Party2Success,
-        Party2Failed,
-        Boss
-    }
-
     //They pressed the correct button. That means success.
     void Party2InputSuccess()
     {
@@ -704,76 +884,6 @@ public class GameBrain : MonoBehaviour
         BeginResolutionScreen();
     }
 
-    void BeginResolutionScreen()
-    {
-        //Set the pause duration.
-        _timeLeft = SuccessScreenSeconds;
-        _currentTimeLeftSeconds = _timeLeft;
-        _gameState = GameState.SuccessScreen;
-    }
-
-    void EndResolutionScreen()
-    {
-        EndAttackCycle();
-    }
-
-    void EndAttackCycle()
-    {
-        if (_party1Health <= 0 && _party2Health <= 0)
-        {
-            //Double fail!
-            //Go into sudden death.
-            StartSuddenDeath();
-        }
-        else if (_party1Health <= 0)
-        {
-            //Party 1 Died. Was it a boss fight?
-            if (_bossFight)
-            {
-                EndGameAsDefeat();
-            }
-            else
-            {
-                EndGameAsParty2Victory();
-            }
-        }
-        else if (_party2Health <= 0)
-        {
-            //Party 2 Died. Was it a boss fight?
-            if (_bossFight)
-            {
-                EndGameAsVictory();
-            }
-            else
-            {
-                EndGameAsParty1Victory();
-            }
-        }
-        else
-        {
-            //Nobody died. What a pity. Let's just go back and do it again, shall we?
-            StartAttackCycle(AttackMode.Normal);
-        }
-    }
-
-    #endregion
-
-    enum AttackMode
-    {
-        Normal,
-        SuddenDeath
-    }
-
-    void StartSuddenDeath()
-    {
-        //For sudden death, each team gets 1 health. First person to fuck up loses.
-        _party1Health = 1;
-        _party2Health = 1;
-        _party1.RefreshHealth(_party1Health, _party1StartHealth);
-        _party2.RefreshHealth(_party2Health, _party2StartHealth);
-
-        StartAttackCycle(AttackMode.SuddenDeath);
-    }
 
     void EndGameAsDefeat()
     {
@@ -842,13 +952,13 @@ public class GameBrain : MonoBehaviour
     private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroup partyAttack, PartyGroup partyDefend, bool bSelfDamage)
     {
         //Get a random damage value from within the specific player attack range
-        float damage = Mathf.FloorToInt(Random.Range(
+        float damage = Mathf.FloorToInt(UnityEngine.Random.Range(
             minimumDamage,
             maximumDamage
             ));
 
         //Determine if it's a crit.
-        bool bCrit = Random.Range(0.0f, 1.0f) < critPercent;
+        bool bCrit = UnityEngine.Random.Range(0.0f, 1.0f) < critPercent;
         if (bCrit)
             damage *= 2.0f;
 
@@ -879,6 +989,8 @@ public class GameBrain : MonoBehaviour
 
     #endregion
 
+    #endregion
+    
     #region Rendering Game State
 
     void RenderGameState()
@@ -899,8 +1011,7 @@ public class GameBrain : MonoBehaviour
 
             ShowText(false, PlayerHealthText);
             ShowText(false, BossHealthText);
-            ShowText(false, FailText);
-            ShowText(false, SuccessText);
+
             ShowText(false, YouLoseText);
             ShowText(false, YouWinText);
 
@@ -1229,8 +1340,40 @@ public class GameBrain : MonoBehaviour
 
     #endregion
 
-    #region Utility Classes and Enums
+    #region Utility Classes, Functions and Enums
+    
+    // Update is called once per frame
+    IEnumerator UnthreadedDelay(float fSeconds, Action thingToExecute)
+    {
+        print(Time.time);
+        yield return new WaitForSeconds(fSeconds);
+        print(Time.time);
+        thingToExecute();
+    }
 
+    void LogInputKeyPress()
+    {
+        if (Input.anyKeyDown)
+        {
+            string sCombinedKeyDown = "";
+            foreach (KeyCode kcode in System.Enum.GetValues(typeof(KeyCode)))
+            {
+                if (Input.GetKeyDown(kcode))
+                {
+                    sCombinedKeyDown += kcode + ", ";
+                    sCombinedKeyDown += _buttonMaster.GetLetterKeyFromNumberKey(kcode) + ", ";
+                }
+            }
+            Debug.Log("Key pressed: " + sCombinedKeyDown);
+
+            if (_gameState == GameState.AttackScreen && _buttonMaster.GetCurrentParty1ActiveButton() != null)
+            {
+                GameButton party1Button = _buttonMaster.GetCurrentParty1ActiveButton();
+                Debug.Log("Desired key: " + party1Button.LetterKey + ", " + party1Button.NumberKey);
+            }
+        }
+    }
+    
     enum GameState
     {
         TitleScreen,
@@ -1246,5 +1389,4 @@ public class GameBrain : MonoBehaviour
     }
 
     #endregion
-    
 }
