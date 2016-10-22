@@ -1,8 +1,13 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections;
 
 public class BattleSettings
 {
+    public int VictoriesNeededToWin = 1;
+    public int Party1CurrentVictories = 0;
+    public int Party2CurrentVictories = 0;
+
     public bool BossFight;
     public float PVEStartHealth;
     public float PVPStartHealth;
@@ -18,4 +23,11 @@ public class BattleSettings
     public float PlayerMaximumDamagePerAttack;
     public float BuffParty1CritChance;
     public float BuffParty2CritChance;
+
+    public Action<RoundResult> EndRoundNotification;
+}
+
+public class RoundResult
+{
+    public BattleVictor Victor;
 }

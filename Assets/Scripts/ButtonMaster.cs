@@ -5,46 +5,32 @@ using System.Collections.Generic;
 public class ButtonMaster
 {
     #region Properties
-
-    private List<GameButton> Player1Buttons;
-    private List<GameButton> Player2Buttons;
-    private List<GameButton> Player3Buttons;
-    private List<GameButton> Player4Buttons;
-
+    
     private List<GameButton> Party1ActiveButtons;
     private List<GameButton> Party2ActiveButtons;
 
-    private List<KeyCode> AllNumberKeys = new List<KeyCode>();
+    private Dictionary<KeyCode, GameButton> Party1Dictionary;
+    private Dictionary<KeyCode, GameButton> Party2Dictionary;
 
-    private List<KeyCode> AllLetterKeys = new List<KeyCode>()
-    {
-        KeyCode.Semicolon,
-        KeyCode.Colon,
-        KeyCode.Quote,
-        KeyCode.DoubleQuote,
-        KeyCode.RightBracket,
-        KeyCode.LeftBracket
-    };
-
+    private List<KeyCode> AllActiveKeys = new List<KeyCode>();
+    
     //These can change based on settings and configuration that happens at runtime.
-    private KeyCode Player1LetterKey = KeyCode.Semicolon;
-    private KeyCode Player2LetterKey = KeyCode.Colon;
-    private KeyCode Player3LetterKey = KeyCode.Quote;
-    private KeyCode Player4LetterKey = KeyCode.DoubleQuote;
-
-    private KeyCode Party1DummyLetterKey = KeyCode.RightBracket;
-    private KeyCode Party2DummyLetterKey = KeyCode.LeftBracket;
-    private KeyCode Party1DummyNumberKey = KeyCode.RightParen;
-    private KeyCode Party2DummyNumberKey = KeyCode.LeftParen;
-
-    private GameButton Party1DummyButton;
-    private GameButton Party2DummyButton;
     private GameButton Party1CurrentButton;
     private GameButton Party1PreviousButton;
     private GameButton Party2CurrentButton;
     private GameButton Party2PreviousButton;
 
-    private Dictionary<KeyCode, KeyCode> NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
+    //private Dictionary<KeyCode, KeyCode> NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
+    
+    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick2;
+    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick4;
+    private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick3;
+    private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick1;
+
+    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick5;
+    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick6;
+    private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
+    private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
 
     #endregion
 
@@ -67,23 +53,14 @@ public class ButtonMaster
         Party2CurrentButton = null;
         Party2PreviousButton = null;
 
-        Player1Buttons = this.GetPlayer1Buttons();
-        Player2Buttons = this.GetPlayer2Buttons();
-        Player3Buttons = this.GetPlayer3Buttons();
-        Player4Buttons = this.GetPlayer4Buttons();
-        Party1DummyButton = this.GetParty1DummyButton();
-        Party2DummyButton = this.GetParty2DummyButton();
-
         //The party buttons are the list of buttons we can use for the next random button press.
         Party1ActiveButtons = new List<GameButton>();
         Party2ActiveButtons = new List<GameButton>();
         if (bIsBossFight)
         {
             //Boss fight combines all the buttons.
-            Party1ActiveButtons.AddRange(Player1Buttons);
-            Party1ActiveButtons.AddRange(Player2Buttons);
-            Party1ActiveButtons.AddRange(Player3Buttons);
-            Party1ActiveButtons.AddRange(Player4Buttons);
+            Party1ActiveButtons.AddRange(GetParty1Buttons());
+            Party1ActiveButtons.AddRange(GetParty2Buttons());
 
             //Leave Party2ActiveButtons empty, because there is no party 2. Boss is AI!
         }
@@ -91,43 +68,92 @@ public class ButtonMaster
         {
             //PVP
             //Player 1 and 2 on party 1
-            Party1ActiveButtons.AddRange(Player1Buttons);
-            Party1ActiveButtons.AddRange(Player2Buttons);
+            Party1ActiveButtons.AddRange(GetParty1Buttons());
 
             //player 3 and 4 on party 2
-            Party2ActiveButtons.AddRange(Player3Buttons);
-            Party2ActiveButtons.AddRange(Player4Buttons);
+            Party2ActiveButtons.AddRange(GetParty2Buttons());
         }
 
-        AllNumberKeys = new List<KeyCode>();
-        for (int i = 1; i <= 10; i++)
+        AllActiveKeys = new List<KeyCode>();
+        Party1Dictionary = new Dictionary<KeyCode, GameButton>();
+        Party2Dictionary = new Dictionary<KeyCode, GameButton>();
+
+        foreach (GameButton gameButton in Party1ActiveButtons)
         {
-            AllNumberKeys.Add(this.GetKeycode(
-                JoystickAssignment.Joystick1,
-                i
-                ));
-            AllNumberKeys.Add(this.GetKeycode(
-                JoystickAssignment.Joystick2,
-                i
-                ));
-            AllNumberKeys.Add(this.GetKeycode(
-                JoystickAssignment.Joystick3,
-                i
-                ));
-            AllNumberKeys.Add(this.GetKeycode(
-                JoystickAssignment.Joystick4,
-                i
-                ));
+            AllActiveKeys.Add(gameButton.NumberKey);
+
+            if (Party1Dictionary.ContainsKey(gameButton.NumberKey))
+                throw new System.Exception("Party 1 Duplicate key code found: " + gameButton.NumberKey + ", " + gameButton.Name);
+            else
+                Party1Dictionary[gameButton.NumberKey] = gameButton;
         }
+        foreach (GameButton gameButton in Party2ActiveButtons)
+        {
+            AllActiveKeys.Add(gameButton.NumberKey);
 
-        NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
+            if (Party2Dictionary.ContainsKey(gameButton.NumberKey))
+                throw new System.Exception("Party 2 Duplicate key code found: " + gameButton.NumberKey + ", " + gameButton.Name);
+            else
+                Party2Dictionary[gameButton.NumberKey] = gameButton;
+        }
+    }
 
-        foreach (GameButton gb in Player1Buttons) NumberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-        foreach (GameButton gb in Player2Buttons) NumberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-        foreach (GameButton gb in Player3Buttons) NumberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-        foreach (GameButton gb in Player4Buttons) NumberToLetterKeyMapping[gb.NumberKey] = gb.LetterKey;
-        NumberToLetterKeyMapping[Party1DummyButton.NumberKey] = Party1DummyButton.LetterKey;
-        NumberToLetterKeyMapping[Party2DummyButton.NumberKey] = Party2DummyButton.LetterKey;
+    public List<GameButton> GetParty1Buttons()
+    {
+        //Add position A
+        List<GameButton> buttonList = BuildButtonList(
+            BoardPositon.A,
+            Party1PositonAJoystickAssignment
+            );
+
+        //Add position B
+        buttonList.AddRange(BuildButtonList(
+            BoardPositon.B,
+            Party1PositonBJoystickAssignment
+            ));
+
+        //Add position C
+        /*buttonList.AddRange(BuildButtonList(
+            BoardPositon.C,
+            Party1PositonCJoystickAssignment
+            ));
+
+        //Add position D
+        buttonList.AddRange(BuildButtonList(
+            BoardPositon.D,
+            Party1PositonDJoystickAssignment
+            ));*/
+
+        return buttonList;
+    }
+
+    public List<GameButton> GetParty2Buttons()
+    {
+        //Add position A
+        List<GameButton> buttonList = BuildButtonList(
+            BoardPositon.C,
+            Party1PositonCJoystickAssignment
+            );
+
+        //Add position B
+        buttonList.AddRange(BuildButtonList(
+            BoardPositon.D,
+            Party1PositonDJoystickAssignment
+            ));
+            
+        //Add position C
+        /*buttonList.AddRange(BuildButtonList(
+            BoardPositon.C,
+            Party2PositonCJoystickAssignment
+            ));
+
+        //Add position D
+        buttonList.AddRange(BuildButtonList(
+            BoardPositon.D,
+            Party2PositonDJoystickAssignment
+            ));*/
+
+        return buttonList;
     }
 
     #endregion
@@ -165,8 +191,8 @@ public class ButtonMaster
             //If we've already got a current button then we need to randomly select a new one... but not the same one.
             GameButton newButton = currentButton;
             int wCount = 0;
-            while (((newButton.LetterKey == currentButton.LetterKey && newButton.NumberKey == currentButton.NumberKey)
-                        || (previousButton != null && (newButton.LetterKey == previousButton.LetterKey && newButton.NumberKey == previousButton.NumberKey)))
+            while (((newButton.NumberKey == currentButton.NumberKey)
+                        || (previousButton != null && (newButton.NumberKey == previousButton.NumberKey)))
                     && wCount < (wButtonCount * 2))
             {
                 int wRandom = Random.Range(0, wButtonCount);
@@ -179,15 +205,7 @@ public class ButtonMaster
             return newButton;
         }
     }
-
-    public KeyCode GetLetterKeyFromNumberKey(KeyCode numberKey)
-    {
-        if (NumberToLetterKeyMapping != null && NumberToLetterKeyMapping.ContainsKey(numberKey))
-            return NumberToLetterKeyMapping[numberKey];
-        else
-            return KeyCode.None;
-    }
-
+    
     public GameButton GetCurrentParty1ActiveButton()
     {
         return Party1CurrentButton;
@@ -198,50 +216,54 @@ public class ButtonMaster
         return Party2CurrentButton;
     }
     
-    public List<KeyCode> GetAllNumberKeys()
+    public List<KeyCode> GetAllActiveKeys()
     {
-        return AllNumberKeys;
+        return AllActiveKeys;
     }
 
-    public List<KeyCode> GetAllLetterKeys()
-    {
-        return AllLetterKeys;
-    }
-
-    public bool IsCurrentButtonParty1(KeyCode letterKey, KeyCode numberKey)
+    public bool IsCurrentButtonParty1(KeyCode numberKey)
     {
         return (Party1CurrentButton != null
-            && Party1CurrentButton.LetterKey == letterKey
             && Party1CurrentButton.NumberKey == numberKey);
     }
 
-    public bool IsCurrentButtonParty2(KeyCode letterKey, KeyCode numberKey)
+    public bool IsCurrentButtonParty2(KeyCode numberKey)
     {
         return (Party2CurrentButton != null
-            && Party2CurrentButton.LetterKey == letterKey
             && Party2CurrentButton.NumberKey == numberKey);
     }
 
-    public bool IsLetterKeyParty1(KeyCode letterKey)
+    public bool IsKeyParty1(KeyCode key)
     {
-        return ((letterKey == Player1LetterKey) || (letterKey == Player2LetterKey) || (letterKey == Party1DummyLetterKey));
+        return Party1Dictionary.ContainsKey(key);
     }
 
-    public bool IsLetterKeyParty2(KeyCode letterKey)
+    public bool IsKeyParty2(KeyCode key)
     {
-        return ((letterKey == Player3LetterKey) || (letterKey == Player4LetterKey) || (letterKey == Party2DummyLetterKey));
+        return Party2Dictionary.ContainsKey(key);
+    }
+    
+    public enum BoardPositon
+    {
+        A,
+        B,
+        C,
+        D
     }
 
-    public List<GameButton> BuildButtonList(KeyCode letterKey, JoystickAssignment ja, List<string> keyOrder)
+    public List<GameButton> BuildButtonList(BoardPositon boardPositon, JoystickAssignment joystickAssignment)
     {
         List<GameButton> gbList = new List<GameButton>();
 
-        for (int i = 0; i < keyOrder.Count; i++)
+        List<KeyCode> keyCodeList = GetKeyCodeListByJoystickAssignment(joystickAssignment);
+        List<string> buttonNameList = GetButtonNameListByBoardPosition(boardPositon);
+
+        //Button names must be provided in the exact order they appear on the panel.
+        for (int i = 0; i < buttonNameList.Count; i++)
         {
             gbList.Add(new GameButton(
-                letterKey,
-                GetKeycode(ja, i + 1),
-                keyOrder[i]
+               keyCodeList[i],
+                buttonNameList[i]
                 ));
         }
 
@@ -252,95 +274,130 @@ public class ButtonMaster
 
 
     //When AutoInputDualActionMode is true then we simulate the Button Letter Key input during the active screen.
-    
-    public KeyCode GetKeycode(JoystickAssignment ja, int buttonNumber)
+    List<KeyCode> GetKeyCodeListByJoystickAssignment(JoystickAssignment ja)
     {
-        if (ja == JoystickAssignment.Joystick1)
+        switch (ja)
         {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.A;
-                case 2: return KeyCode.B;
-                case 3: return KeyCode.C;
-                case 4: return KeyCode.D;
-                case 5: return KeyCode.E;
-                case 6: return KeyCode.F;
-                case 7: return KeyCode.G;
-                case 8: return KeyCode.H;
-                case 9: return KeyCode.I;
-                case 10: return KeyCode.J;
-            }
+            case JoystickAssignment.Joystick1:
+                return new List<KeyCode>()
+                {
+                        KeyCode.A,
+                        KeyCode.B,
+                        KeyCode.C,
+                        KeyCode.D,
+                        KeyCode.E,
+                        KeyCode.F,
+                        KeyCode.G,
+                        KeyCode.H,
+                        KeyCode.I,
+                        KeyCode.J,
+                };
+            case JoystickAssignment.Joystick2:
+                return new List<KeyCode>()
+                {
+                        KeyCode.K,
+                        KeyCode.L,
+                        KeyCode.M,
+                        KeyCode.N,
+                        KeyCode.O,
+                        KeyCode.P,
+                        KeyCode.Q,
+                        KeyCode.R,
+                        KeyCode.S,
+                        KeyCode.T,
+                };
+            case JoystickAssignment.Joystick3:
+                return new List<KeyCode>()
+                {
+                        KeyCode.U,
+                        KeyCode.V,
+                        KeyCode.W,
+                        KeyCode.X,
+                        KeyCode.Y,
+                        KeyCode.Z,
+                        KeyCode.Comma,
+                        KeyCode.Period,
+                        KeyCode.Semicolon,
+                        KeyCode.Quote,
+                };
+            case JoystickAssignment.Joystick4:
+                return new List<KeyCode>()
+                {
+                        KeyCode.Alpha1,
+                        KeyCode.Alpha2,
+                        KeyCode.Alpha3,
+                        KeyCode.Alpha4,
+                        KeyCode.Alpha5,
+                        KeyCode.Alpha6,
+                        KeyCode.Alpha7,
+                        KeyCode.Alpha8,
+                        KeyCode.Alpha9,
+                        KeyCode.Alpha0,
+                };
+            case JoystickAssignment.Joystick5:
+                return new List<KeyCode>()
+                {
+                        KeyCode.Keypad0,
+                        KeyCode.Keypad1,
+                        KeyCode.Keypad2,
+                        KeyCode.Keypad3,
+                        KeyCode.Keypad4,
+                        KeyCode.Keypad5,
+                        KeyCode.Keypad6,
+                        KeyCode.Keypad7,
+                        KeyCode.Keypad8,
+                        KeyCode.Keypad9,
+                };
+            case JoystickAssignment.Joystick6:
+                return new List<KeyCode>()
+                {
+                        KeyCode.F1,
+                        KeyCode.F2,
+                        KeyCode.F3,
+                        KeyCode.F4,
+                        KeyCode.F5,
+                        KeyCode.F6,
+                        KeyCode.F7,
+                        KeyCode.F8,
+                        KeyCode.F9,
+                        KeyCode.F10,
+                };
+            case JoystickAssignment.Joystick7:
+                return new List<KeyCode>()
+                {
+                        KeyCode.F11,
+                        KeyCode.F12,
+                        KeyCode.F13,
+                        KeyCode.F14,
+                        KeyCode.F15,
+                        KeyCode.LeftBracket,
+                        KeyCode.RightBracket,
+                        KeyCode.LeftShift,
+                        KeyCode.RightShift,
+                        KeyCode.Equals,
+                };
+            case JoystickAssignment.Joystick8:
+                return new List<KeyCode>()
+                {
+                        KeyCode.Space,
+                        KeyCode.PageUp,
+                        KeyCode.PageDown,
+                        KeyCode.End,
+                        KeyCode.Home,
+                        KeyCode.Underscore,
+                        KeyCode.Backslash,
+                        KeyCode.Backspace,
+                        KeyCode.Tab,
+                        KeyCode.KeypadMultiply,
+                };
+            default:
+                throw new System.Exception("No joystick that high.");
         }
-        else if (ja == JoystickAssignment.Joystick2)
-        {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.K;
-                case 2: return KeyCode.L;
-                case 3: return KeyCode.M;
-                case 4: return KeyCode.N;
-                case 5: return KeyCode.O;
-                case 6: return KeyCode.P;
-                case 7: return KeyCode.Q;
-                case 8: return KeyCode.R;
-                case 9: return KeyCode.S;
-                case 10: return KeyCode.T;
-            }
-        }
-        else if (ja == JoystickAssignment.Joystick3)
-        {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.U;
-                case 2: return KeyCode.V;
-                case 3: return KeyCode.W;
-                case 4: return KeyCode.X;
-                case 5: return KeyCode.Y;
-                case 6: return KeyCode.Z;
-                case 7: return KeyCode.Comma;
-                case 8: return KeyCode.Period;
-                case 9: return KeyCode.Slash;
-                case 10: return KeyCode.Backslash;
-            }
-        }
-        else if (ja == JoystickAssignment.Joystick4)
-        {
-            switch (buttonNumber)
-            {
-                case 1: return KeyCode.Alpha1;
-                case 2: return KeyCode.Alpha2;
-                case 3: return KeyCode.Alpha3;
-                case 4: return KeyCode.Alpha4;
-                case 5: return KeyCode.Alpha5;
-                case 6: return KeyCode.Alpha6;
-                case 7: return KeyCode.Alpha7;
-                case 8: return KeyCode.Alpha8;
-                case 9: return KeyCode.Alpha9;
-                case 10: return KeyCode.Alpha0;
-            }
-        }
-        return KeyCode.None;
     }
 
-    private JoystickAssignment Player1JoystickAssignment = JoystickAssignment.Joystick4;
-    public List<GameButton> GetPlayer1Buttons()
+    public bool IsQuitKey()
     {
-        return BuildButtonList(
-            Player1LetterKey,
-            Player1JoystickAssignment,
-            new List<string>()
-        {
-            { "Flying Groin Stomp" },
-            { "Aggrevate Old Tap-Dancing Injury" },
-            { "Spray and Pray" },
-            { "Tank and Spank" },
-            { "Falcon Punch!" },
-            { "Overcook the Roast" },
-            { "Put Gum In Hair" },
-            { "360 No Scope" },
-            { "Turn Off and Back On" },
-            { "Kill With Fire" },
-        });
+        return Input.GetKeyDown(KeyCode.Escape);
     }
 
     public bool IsResetKey()
@@ -353,99 +410,69 @@ public class ButtonMaster
         return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
     }
 
-    private JoystickAssignment Player2JoystickAssignment = JoystickAssignment.Joystick3;
-    public List<GameButton> GetPlayer2Buttons()
+    List<string> GetButtonNameListByBoardPosition(BoardPositon boardPositon)
     {
-        return BuildButtonList(
-            Player2LetterKey,
-            Player2JoystickAssignment,
-            new List<string>()
+        switch (boardPositon)
         {
-            { "Scratch Their Bieber CDs" },
-            { "Press Alt + F4" },
-            { "Wet Willy" },
-            { "Don't Send Xmas Card" },
-            { "Don't Touch Anything" },
-            { "Fap Quietly to Food Network" },
-            { "Run in Circles" },
-            { "Kill with Kindness" },
-            { "Tiger's Claw Grasps the Pearls" },
-            { "Flail Wildly" },
-        });
-    }
-
-    private JoystickAssignment Player3JoystickAssignment = JoystickAssignment.Joystick1;
-    public List<GameButton> GetPlayer3Buttons()
-    {
-        return BuildButtonList(
-            Player3LetterKey,
-            Player3JoystickAssignment,
-            new List<string>()
-        {
-            { "Execute" },
-            { "Eye Gouge" },
-            { "Long Distance Expectoration" }, //Especially Good Expectoration
-            { "Fake High Five" },
-            { "Release the Kraken" },
-            { "Sweep the Leg" },
-            { "Camp Spawn" },
-            { "420 Blaze 'Em" },
-            { "Shit Self" },
-            { "Spin to Win" },
-        });
-    }
-
-    private JoystickAssignment Player4JoystickAssignment = JoystickAssignment.Joystick2;
-    public List<GameButton> GetPlayer4Buttons()
-    {
-        return BuildButtonList(
-            Player4LetterKey,
-            Player4JoystickAssignment,
-            new List<string>()
-            {
-                { "Grab Pitchfork!" },
-                { "Call Tech Support" },
-                { "Fire da Lazzzoorrr!!!" },
-                { "Smoke (If you got 'em)" },
-                { "Cheat" },
-                { "Rage Silently" },
-                { "Kill the Messenger" },
-                { "Spinning Neck Chop" },
-                { "Farm Jungle" },
-                { "Disenchant Legendary" },
-            });
-    }
-
-    public GameButton GetParty1DummyButton()
-    {
-        return new GameButton(Party1DummyLetterKey, Party1DummyNumberKey, "Party 1 Dummy");
-    }
-
-    public GameButton GetParty2DummyButton()
-    {
-        return new GameButton(Party2DummyLetterKey, Party2DummyNumberKey, "Party 2 Dummy");
-    }
-
-    public List<GameButton> GetParty1Buttons()
-    {
-        List<GameButton> combinedList = new List<GameButton>();
-
-        combinedList.Add(GetParty1DummyButton());
-        combinedList.AddRange(GetPlayer1Buttons());
-        combinedList.AddRange(GetPlayer2Buttons());
-
-        return combinedList;
-    }
-
-    public List<GameButton> GetParty2Buttons()
-    {
-        List<GameButton> combinedList = new List<GameButton>();
-
-        combinedList.Add(GetParty2DummyButton());
-        combinedList.AddRange(GetPlayer3Buttons());
-        combinedList.AddRange(GetPlayer4Buttons());
-
-        return combinedList;
+            case BoardPositon.D:
+                return new List<string>()
+                {
+                    { "Flying Groin Stomp" },
+                    { "Aggrevate Old Tap-Dancing Injury" },
+                    { "Spray and Pray" },
+                    { "Tank and Spank" },
+                    { "Falcon Punch!" },
+                    { "Overcook the Roast" },
+                    { "Put Gum In Hair" },
+                    { "360 No Scope" },
+                    { "Turn Off and Back On" },
+                    { "Kill With Fire" },
+                };
+            case BoardPositon.C:
+                return new List<string>()
+                {
+                    { "Scratch Their Bieber CDs" },
+                    { "Press Alt + F4" },
+                    { "Wet Willy" },
+                    { "Don't Send Xmas Card" },
+                    { "Don't Touch Anything" },
+                    { "Fap Quietly to Food Network" },
+                    { "Run in Circles" },
+                    { "Kill with Kindness" },
+                    { "Tiger's Claw Grasps the Pearls" },
+                    { "Flail Wildly" },
+                };
+            case BoardPositon.B:
+                return new List<string>()
+                {
+                    { "Execute" },
+                    { "Eye Gouge" },
+                    { "Long Distance Expectoration" }, //Especially Good Expectoration
+                    { "Fake High Five" },
+                    { "Release the Kraken" },
+                    { "Sweep the Leg" },
+                    { "Camp Spawn" },
+                    { "420 Blaze 'Em" },
+                    { "Shit Self" },
+                    { "Spin to Win" },
+                };
+            case BoardPositon.A:
+                return new List<string>()
+                {
+                    { "Grab Pitchfork!" },
+                    { "Call Tech Support" },
+                    { "Fire da Lazzzoorrr!!!" },
+                    { "Smoke (If you got 'em)" },
+                    { "Cheat" },
+                    { "Rage Silently" },
+                    { "Kill the Messenger" },
+                    { "Spinning Neck Chop" },
+                    { "Farm Jungle" },
+                    { "Disenchant Legendary" },
+                };
+            default:
+                throw new System.Exception("Invalid board positon.");
+        }
     }
 }
 
@@ -453,12 +480,12 @@ public class ButtonMaster
 public class GameButton
 {
     public string Name;
-    public KeyCode LetterKey;
+    //public KeyCode LetterKey;
     public KeyCode NumberKey;
 
-    public GameButton(KeyCode letterKey, KeyCode numberKey, string sName)
+    public GameButton(KeyCode numberKey, string sName)
     {
-        this.LetterKey = letterKey;
+        //this.LetterKey = letterKey;
         this.NumberKey = numberKey;
         this.Name = sName;
     }
@@ -469,5 +496,9 @@ public enum JoystickAssignment
     Joystick1,
     Joystick2,
     Joystick3,
-    Joystick4
+    Joystick4,
+    Joystick5,
+    Joystick6,
+    Joystick7,
+    Joystick8
 }

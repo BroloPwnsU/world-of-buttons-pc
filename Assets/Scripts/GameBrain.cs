@@ -20,7 +20,11 @@ public class GameBrain : MonoBehaviour
     private float _buffIncreaseActiveTimePercent = 0;
     private float _buffDecreaseBossHealthPercent = 0;
     private float _buffIncreasePlayerHealthPercent = 0;
-    
+
+    private int _victoriesNeededToWin;
+    private int _party1VictoryCount = 0;
+    private int _party2VictoryCount = 0;
+
     private float _pvpStartHealth;
     private float _pveStartHealth;
     private float _bossStartHealth;
@@ -51,7 +55,8 @@ public class GameBrain : MonoBehaviour
     public float InitialActiveScreenSeconds;
     public float MinimumActiveScreenSeconds;
     public float ActiveScreenScalingFactor;
-    public float PrepScreenSeconds;
+    public float GetReadyScreenSeconds;
+    public float RoundVictoryScreenSeconds;
     public float FailScreenSeconds;
     public float SuccessScreenSeconds;
 
@@ -148,7 +153,7 @@ public class GameBrain : MonoBehaviour
 
             #endregion
         }
-        else if (_gameState == GameState.PrepScreen)
+        else if (_gameState == GameState.GetReady)
         {
             #region Prep - Intro animation/instructions. Can't skip.
 
@@ -158,13 +163,29 @@ public class GameBrain : MonoBehaviour
             if (_timeLeft < 0)
             {
                 //After the time expires, switch to a player cycle.
-                EndPrepScreen();
+                EndGetReadyScreen();
             }
 
             #endregion
         }
         else if (_gameState == GameState.AttackScreen)
         {
+            //Handled completely in the AttackPanel object
+        }
+        else if (_gameState == GameState.RoundVictoryScreen)
+        {
+            #region Prep - Intro animation/instructions. Can't skip.
+
+            // Only attendant can reset the game from here.
+            //We will wait for the time period to end.
+            _timeLeft -= Time.deltaTime;
+            if (_timeLeft < 0)
+            {
+                //After the time expires, switch to a player cycle.
+                EndRoundVictoryScreen();
+            }
+
+            #endregion
         }
         else if (_gameState == GameState.OutcomeScreen)
         {
@@ -299,6 +320,7 @@ public class GameBrain : MonoBehaviour
     private string OPTION_MENU_MODE = "MODE";
     private string OPTION_MENU_MODE_VALUE_BOSS = "BOSS BATTLE";
     private string OPTION_MENU_MODE_VALUE_PVP = "PVP";
+    private string OPTION_MENU_ROUNDS = "ROUNDS";
     private string OPTION_MENU_CRIT_CHANCE = "CRIT CHANCE";
 
     OptionPanelSettings GetOptionsSettings()
@@ -307,8 +329,8 @@ public class GameBrain : MonoBehaviour
 
         List<string> modeValues = new List<string>()
         {
+            OPTION_MENU_MODE_VALUE_PVP,
             OPTION_MENU_MODE_VALUE_BOSS,
-            OPTION_MENU_MODE_VALUE_PVP
         };
         OptionMenu bmMode = new OptionMenu(
             OPTION_MENU_MODE,
@@ -318,8 +340,36 @@ public class GameBrain : MonoBehaviour
 
         bmList.Add(bmMode);
 
+        List<string> roundValues = new List<string>()
+        {
+            "1",
+            "3",
+            "5",
+            "7"
+        };
+
+        //Populate default from currently selected value.
+        string sSelectedRoundValue = roundValues[2];
+        if (_victoriesNeededToWin == 1)
+            sSelectedRoundValue = roundValues[0];
+        else if (_victoriesNeededToWin == 2)
+            sSelectedRoundValue = roundValues[1];
+        else if (_victoriesNeededToWin == 3)
+            sSelectedRoundValue = roundValues[2];
+        else if (_victoriesNeededToWin == 4)
+            sSelectedRoundValue = roundValues[3];
+
+        OptionMenu omRounds = new OptionMenu(
+            OPTION_MENU_ROUNDS,
+            roundValues.ToArray(),
+            sSelectedRoundValue
+            );
+
+        bmList.Add(omRounds);
+
         List<string> critValues = new List<string>()
         {
+            "0%",
             "5%",
             "10%",
             "15%",
@@ -365,11 +415,52 @@ public class GameBrain : MonoBehaviour
             _bossFight = false;
         }
 
+        //Determine victories needed
+        _victoriesNeededToWin = 1;
+        _party1VictoryCount = 0;
+        _party2VictoryCount = 0;
+        if (selectedOptions[OPTION_MENU_ROUNDS] == "1")
+        {
+            _victoriesNeededToWin = 1;
+        }
+        else if (selectedOptions[OPTION_MENU_ROUNDS] == "3")
+        {
+            _victoriesNeededToWin = 2;
+        }
+        else if (selectedOptions[OPTION_MENU_ROUNDS] == "5")
+        {
+            _victoriesNeededToWin = 3;
+        }
+        else if (selectedOptions[OPTION_MENU_ROUNDS] == "7")
+        {
+            _victoriesNeededToWin = 4;
+        }
+
+        //Determine crit chance, if any
+        string sCritChance = selectedOptions[OPTION_MENU_CRIT_CHANCE];
+        float dCritChance = 0;
+        if (!String.IsNullOrEmpty(sCritChance))
+        {
+            sCritChance = sCritChance.Remove(sCritChance.Length - 1, 1);
+            dCritChance = float.Parse(sCritChance) * .01f;
+        }
+
+        if (_bossFight)
+        {
+            _buffParty1CritChance = dCritChance;
+            _buffParty2CritChance = 0;
+        }
+        else
+        {
+            _buffParty1CritChance = dCritChance;
+            _buffParty2CritChance = dCritChance;
+        }
+
         //Apply health buffs/debuffs to starting health meters
 
         //If it's a PVP fight then player 1 uses the boss's stats. Otherwise it copies player 1.
         //We do this so the PVP fight lasts a good long while.
-        
+
         //Don't apply debuffs/buffs during PVP.
         _pvpStartHealth = PVPStartHealth;
 
@@ -381,7 +472,7 @@ public class GameBrain : MonoBehaviour
         _buttonMaster.SetupButtons(_bossFight);
 
         //Skip to prep screen
-        BeginPrepScreen();
+        StartGetReadyScreen();
     }
 
     #endregion
@@ -391,15 +482,15 @@ public class GameBrain : MonoBehaviour
     /// <summary>
     /// Prep screen is the countdown before the game starts, after the options and loading screens, before the active screen.
     /// </summary>
-    void BeginPrepScreen()
+    void StartGetReadyScreen()
     {
-        _gameState = GameState.PrepScreen;
-        RenderPrepScreen();
+        _gameState = GameState.GetReady;
+        RenderGetReadyScreen();
 
-        _timeLeft = PrepScreenSeconds;
+        _timeLeft = GetReadyScreenSeconds;
     }
 
-    void RenderPrepScreen()
+    void RenderGetReadyScreen()
     {
         foreach (GamePanel gamePanel in _gamePanels)
         {
@@ -417,7 +508,7 @@ public class GameBrain : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    void EndPrepScreen()
+    void EndGetReadyScreen()
     {
         StartAttack();
     }
@@ -433,6 +524,9 @@ public class GameBrain : MonoBehaviour
 
         BattleSettings battleSettings = new BattleSettings()
         {
+            VictoriesNeededToWin = _victoriesNeededToWin,
+            Party1CurrentVictories = _party1VictoryCount,
+            Party2CurrentVictories = _party2VictoryCount,
             BossFight = _bossFight,
             PVEStartHealth = _pveStartHealth,
             PVPStartHealth = _pvpStartHealth,
@@ -447,9 +541,63 @@ public class GameBrain : MonoBehaviour
             BuffIncreaseActiveTimeMultiplier = _buffIncreaseActiveTimeMultiplier,
             BuffParty1CritChance = _buffParty1CritChance,
             BuffParty2CritChance = _buffParty2CritChance,
+            EndRoundNotification = EndRoundNotification
         };
 
         _attackPanel.StartBattle(_buttonMaster, battleSettings);
+    }
+
+    void EndRoundNotification(RoundResult roundResult)
+    {
+        //Increment the appropirate counter to show who is winning
+        if (roundResult.Victor == BattleVictor.Party1
+            || roundResult.Victor == BattleVictor.PVE)
+        {
+            _party1VictoryCount++;
+        }
+        else if (roundResult.Victor == BattleVictor.Party2
+            || roundResult.Victor == BattleVictor.Boss)
+        {
+            _party2VictoryCount++;
+        }
+        else
+        {
+            //Fuck you
+        }
+
+        //We've updated the victory count for these fucks. Now hide the battle panel.
+        // Then, depending on the number of current victories, either show a TRIUMPH! screen of some sort,
+        // or trigger a new combat sequence.
+        BattlePanel.SetActive(false);
+        Debug.Log("Party 1: " + _party1VictoryCount + ", Party 2: " + _party2VictoryCount + ", VNTW: " + _victoriesNeededToWin);
+        if (_party1VictoryCount >= _victoriesNeededToWin)
+        {
+            if (_bossFight)
+            {
+                StartPVEVictory();
+            }
+            else
+            {
+                StartParty1Victory();
+            }
+        }
+        else if (_party2VictoryCount >= _victoriesNeededToWin)
+        {
+            if (_bossFight)
+            {
+                StartBossVictory();
+            }
+            else
+            {
+                StartParty2Victory();
+            }
+        }
+        else
+        {
+            //Nobody won yet. Need to fight another round.
+            //But first, show who won this round.
+            StartRoundVictoryScreen(roundResult);
+        }
     }
 
     void RenderAttackScreen()
@@ -465,6 +613,39 @@ public class GameBrain : MonoBehaviour
                 gamePanel.Hide();
             }
         }
+    }
+
+    #endregion
+
+    #region State - Round Victory
+    
+    void StartRoundVictoryScreen(RoundResult roundResult)
+    {
+        _gameState = GameState.RoundVictoryScreen;
+        RenderRoundVictoryScreen(roundResult);
+
+        _timeLeft = RoundVictoryScreenSeconds;
+    }
+
+    void RenderRoundVictoryScreen(RoundResult roundResult)
+    {
+        foreach (GamePanel gamePanel in _gamePanels)
+        {
+            if (gamePanel is ResolutionPanel)
+            {
+                gamePanel.Show();
+                ((ResolutionPanel)gamePanel).SetVictor(roundResult);
+            }
+            else
+            {
+                gamePanel.Hide();
+            }
+        }
+    }
+
+    void EndRoundVictoryScreen()
+    {
+        StartGetReadyScreen();
     }
 
     #endregion
@@ -616,7 +797,7 @@ public class GameBrain : MonoBehaviour
 
     void LogInputKeyPress()
     {
-        return;
+        /*
         if (Input.anyKeyDown)
         {
             string sCombinedKeyDown = "";
@@ -636,14 +817,17 @@ public class GameBrain : MonoBehaviour
                 Debug.Log("Desired key: " + party1Button.LetterKey + ", " + party1Button.NumberKey);
             }
         }
+        */
     }
     
     enum GameState
     {
         TitleScreen,
         OptionsScreen,
-        PrepScreen,
+        GetReady,
+        Loading,
         AttackScreen,
+        RoundVictoryScreen,
         OutcomeScreen
     }
 

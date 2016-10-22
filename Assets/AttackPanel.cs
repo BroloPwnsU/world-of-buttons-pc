@@ -21,6 +21,7 @@ public class AttackPanel : GamePanel
     public GameObject BossPanel;
     public GameObject PlayerPanel;
     public GameObject TimerPanel;
+    public GameObject PanicModePanel;
 
     private bool AutoInputDualActionMode = true;
 
@@ -47,6 +48,8 @@ public class AttackPanel : GamePanel
 
     private bool _battleRaging = false;
     private bool _freezeTime = false;
+    private BattleMode _battleMode = BattleMode.Timed;
+    private Action<RoundResult> EndRoundNotification;
 
     void Start()
     {
@@ -89,37 +92,47 @@ public class AttackPanel : GamePanel
         _party2.RefreshHealth(_party2StartHealth, _party2StartHealth);
 
         //Prep the player/boss panels for battle.
-        _party1.PrepForBattle(_battleSettings.BossFight, _party1StartHealth);
-        _party2.PrepForBattle(_battleSettings.BossFight, _party2StartHealth);
+        _party1.PrepForBattle(
+            _battleSettings.BossFight, 
+            _party1StartHealth,
+            _battleSettings.VictoriesNeededToWin,
+            _battleSettings.Party1CurrentVictories
+            );
+        _party2.PrepForBattle(
+            _battleSettings.BossFight, 
+            _party2StartHealth,
+            _battleSettings.VictoriesNeededToWin,
+            _battleSettings.Party2CurrentVictories
+            );
 
         _battleRaging = true;
+        EndRoundNotification = _battleSettings.EndRoundNotification;
+
+        //Start on normal mode, move to Panic Mode later
+        PanicModePanel.SetActive(false);
+        _battleMode = BattleMode.Timed;
 
         StartAttackCycle(AttackMode.Normal);
     }
 
     void Update()
     {
-        if (_battleRaging)
+        //Only handle user input when the battle is raging (yar!) and we are not freezing time waiting for something interesting to happen.
+        if (_battleRaging && !_freezeTime)
         {
-            if (ReadAttackInput())
-            {
-                EndAttackCycle();
-            }
-            else
+            if (!HandleAttackInput())
             {
                 //If we have not received a keypress, then we make sure they are within the time limit.
 
                 //Unless time is frozen, which happens during the resolution phase after a keypress
-                if (!_freezeTime)
-                {
-                    _timeLeft -= Time.deltaTime;
-                    UpdateTimeLeftText();
 
-                    if (_timeLeft < 0)
-                    {
-                        FailByTimeElapsed();
-                        EndAttackCycle();
-                    }
+                _timeLeft -= Time.deltaTime;
+                UpdateTimeLeftText();
+
+                if (_timeLeft < 0)
+                {
+                    FailByTimeElapsed();
+                    EndAttackCycle();
                 }
             }
         }
@@ -204,7 +217,16 @@ public class AttackPanel : GamePanel
 
     void EndBattle(BattleVictor victor)
     {
+        //The battle is ended. Make sure everything user-related freezes.
         _battleRaging = false;
+        _freezeTime = false;
+
+        //How do we share the end of the battle with the parent object?
+        RoundResult roundResult = new RoundResult()
+        {
+            Victor = victor
+        };
+        EndRoundNotification(roundResult);
     }
 
     void EndAttackCycle()
@@ -217,7 +239,7 @@ public class AttackPanel : GamePanel
     {
         if (_party1Health <= 0 && _party2Health <= 0)
         {
-            //Double fail!
+            //float fail!
             //Go into sudden death.
             StartSuddenDeath();
         }
@@ -256,6 +278,18 @@ public class AttackPanel : GamePanel
         }
     }
 
+    bool HandleAttackInput()
+    {
+        if (ReadAttackInput())
+        {
+            //Somebody pressed something. 
+
+            EndAttackCycle();
+            return true;
+        }
+        return false;
+    }
+
     /// <summary>
     /// Reads keystrokes during the attack cycle, determines outcome of keystrokes, and dispatches actions.
     /// </summary>
@@ -270,41 +304,24 @@ public class AttackPanel : GamePanel
         // Ties between presses are very unlikely given the fact that hundreds of updates happen per second.
 
         List<KeyCode> numberKeysPressed = new List<KeyCode>();
-        List<KeyCode> letterKeysPressed = new List<KeyCode>();
-
-        foreach (KeyCode numberKey in _buttonMaster.GetAllNumberKeys())
+        //List<KeyCode> letterKeysPressed = new List<KeyCode>();
+        
+        foreach (KeyCode numberKey in _buttonMaster.GetAllActiveKeys())
         {
             //Check all possible joystick number keys to look for multiple presses.
             if (Input.GetKeyDown(numberKey))
             {
                 //Someone pressed a joystick key!
                 numberKeysPressed.Add(numberKey);
-
-                //If the AutoInput mode is active then we self-populate the letter keys
-                if (AutoInputDualActionMode)
-                {
-                    KeyCode letterKey = _buttonMaster.GetLetterKeyFromNumberKey(numberKey);
-                    if (!letterKeysPressed.Contains(letterKey))
-                        letterKeysPressed.Add(letterKey);
-                }
             }
         }
 
-        foreach (KeyCode letterKey in _buttonMaster.GetAllLetterKeys())
-        {
-            //Check all possible letter keys to look for multiple presses.
-            if (Input.GetKeyDown(letterKey))
-            {
-                //Someone pressed a joystick key!
-                letterKeysPressed.Add(letterKey);
-            }
-        }
-
-        if (letterKeysPressed.Count > 0 && numberKeysPressed.Count > 0)
+        if (numberKeysPressed.Count > 0)
         {
             //Somebody pressed at least one joystick key. Oh joy!
             //First check to see if TWO buttons were pressed
-            if (letterKeysPressed.Count >= 2)
+            #region OLD
+            /*if (letterKeysPressed.Count >= 2)
             {
                 #region Two buttons hit in different sections.
 
@@ -321,9 +338,9 @@ public class AttackPanel : GamePanel
                     int wParty2Count = 0;
                     foreach (KeyCode letterKey in letterKeysPressed)
                     {
-                        if (_buttonMaster.IsLetterKeyParty1(letterKey))
+                        if (_buttonMaster.IsKeyParty1(number))
                             wParty1Count++;
-                        else if (_buttonMaster.IsLetterKeyParty2(letterKey))
+                        else if (_buttonMaster.IsKeyParty2(letterKey))
                             wParty2Count++;
                     }
 
@@ -346,9 +363,12 @@ public class AttackPanel : GamePanel
                 #endregion
                 return true;
             }
-            else if (numberKeysPressed.Count >= 2)
+            else */
+            #endregion
+
+            if (numberKeysPressed.Count >= 2)
             {
-                #region Two buttons hit in the same section
+                #region Two buttons hit at the same time
 
                 //If it's a boss fight, then this is an automatic failure, since all players are on the same team.
                 if (_battleSettings.BossFight)
@@ -357,17 +377,79 @@ public class AttackPanel : GamePanel
                 }
                 else
                 {
-                    KeyCode letterKey = letterKeysPressed[0];
+                    bool bParty1Success = false;
+                    bool bParty1Failed = false;
+                    bool bParty2Success = false;
+                    bool bParty2Failed = false;
 
-                    //One player pressed more than one key. Which team were they on?
-                    if (_buttonMaster.IsLetterKeyParty1(letterKey))
+                    foreach (KeyCode key in numberKeysPressed)
                     {
-                        Party1InputFailByTie();
+                        if (_buttonMaster.IsKeyParty1(key))
+                        {
+                            Party1InputFailByTie();
+                            break;
+                        }
                     }
-                    else if (_buttonMaster.IsLetterKeyParty1(letterKey))
+
+                    foreach (KeyCode key in numberKeysPressed)
                     {
-                        Party2InputFailByTie();
+                        if (_buttonMaster.IsKeyParty2(key))
+                        {
+                            if (_buttonMaster.IsCurrentButtonParty2(key))
+                            {
+                                bParty2Success = true;
+                            }
+                            else
+                            {
+                                bParty2Failed = true;
+                            }
+                            break;
+                        }
                     }
+
+
+                    if (bParty2Failed && bParty1Failed)
+                    {
+                        FailByTimeElapsed();
+                    }
+                    else if (bParty1Failed || bParty2Failed)
+                    {
+                        if (bParty1Failed)
+                        {
+                            if (bParty2Success)
+                            {
+                                Party2InputSuccess();
+                            }
+                            else
+                            {
+                                Party1InputFailByButtonPress();
+                            }
+                        }
+                        else
+                        {
+                            if (bParty1Success)
+                            {
+                                Party1InputSuccess();
+                            }
+                            else
+                            {
+                                Party2InputFailByButtonPress();
+                            }
+                        }
+                    }
+                    else if (bParty2Success && bParty1Success)
+                    {
+                        BothPartyInputTie();
+                    }
+                    else if (bParty2Success)
+                    {
+                        Party2InputSuccess();
+                    }
+                    else if (bParty1Success)
+                    {
+                        Party1InputSuccess();
+                    }
+
                 }
                 #endregion
                 return true;
@@ -379,7 +461,7 @@ public class AttackPanel : GamePanel
                 if (_battleSettings.BossFight)
                 {
                     Debug.Log("something pressed?");
-                    if (_buttonMaster.IsCurrentButtonParty1(letterKeysPressed[0], numberKeysPressed[0]))
+                    if (_buttonMaster.IsCurrentButtonParty1(numberKeysPressed[0]))
                     {
                         //Correct key pressed!
                         Party1InputSuccess();
@@ -391,14 +473,12 @@ public class AttackPanel : GamePanel
                 }
                 else
                 {
-                    KeyCode letterKey = letterKeysPressed[0];
                     KeyCode numberKey = numberKeysPressed[0];
-
-
-                    if (_buttonMaster.IsLetterKeyParty1(letterKey))
+                    
+                    if (_buttonMaster.IsKeyParty1(numberKey))
                     {
                         //Pressed by party 1. Was it correct?
-                        if (_buttonMaster.IsCurrentButtonParty1(letterKey, numberKey))
+                        if (_buttonMaster.IsCurrentButtonParty1(numberKey))
                         {
                             //Success!
                             Party1InputSuccess();
@@ -409,10 +489,10 @@ public class AttackPanel : GamePanel
                             Party1InputFailByButtonPress();
                         }
                     }
-                    else if (_buttonMaster.IsLetterKeyParty2(letterKey))
+                    else if (_buttonMaster.IsKeyParty2(numberKey))
                     {
                         //Pressed by party 2. Was it correct?
-                        if (_buttonMaster.IsCurrentButtonParty2(letterKey, numberKey))
+                        if (_buttonMaster.IsCurrentButtonParty2(numberKey))
                         {
                             //Success!
                             Party2InputSuccess();
@@ -559,9 +639,14 @@ public class AttackPanel : GamePanel
             ));
 
         //Determine if it's a crit.
-        bool bCrit = UnityEngine.Random.Range(0.0f, 1.0f) < critPercent;
-        if (bCrit)
-            damage *= 2.0f;
+        bool bCrit = false;
+        //Can't crit yourself. That's just mean.
+        if (!bSelfDamage)
+        {
+            bCrit = UnityEngine.Random.Range(0.0f, 1.0f) < critPercent;
+            if (bCrit)
+                damage *= 2.0f;
+        }
 
         float newHealth = currentHealth;
         if (damage >= currentHealth)
@@ -690,4 +775,10 @@ public enum BattleVictor
     PVE,
     Party1,
     Party2
+}
+
+public enum BattleMode
+{
+    Timed,
+    Panic
 }

@@ -20,6 +20,14 @@ public class PartyGroup : MonoBehaviour
     public GameObject PVESpritePanel;
     public GameObject PVPSpritePanel;
 
+    public GameObject Round1VictorySprite;
+    public GameObject Round2VictorySprite;
+    public GameObject Round3VictorySprite;
+    public GameObject Round4VictorySprite;
+
+    public Material SpriteSubdueMaterial;
+    public Material SpriteActiveMaterial;
+
     // Use this for initialization
     void Awake()
     {
@@ -43,7 +51,7 @@ public class PartyGroup : MonoBehaviour
         }
     }
 
-    public void PrepForBattle(bool bIsPVP, float StartingHealth)
+    public void PrepForBattle(bool bIsPVP, float StartingHealth, int wVictoriesNeededToWin, int wCurrentVictores)
     {
         _bIsPVP = bIsPVP;
 
@@ -59,6 +67,54 @@ public class PartyGroup : MonoBehaviour
             PVESpritePanel.SetActive(false);
             PVPSpritePanel.SetActive(true);
         }
+
+        if (wVictoriesNeededToWin <= 1)
+        {
+            //If the party only needs one victory to win, then we don't need to keep count of victories
+            for (int i = 1; i <= 4; i++)
+            {
+                GetVictorySprite(i).SetActive(false);
+            }
+        }
+        else
+        {
+            //We only support up to 3 victories per player. Because we're lazy coders
+            for (int i = 1; i <= 4; i++)
+            {
+                if (i <= wVictoriesNeededToWin)
+                {
+                    //Show this sprite
+                    GetVictorySprite(i).SetActive(true);
+
+                    //Tell it whether to make it bright or make it boring.
+                    if (i <= wCurrentVictores)
+                    {
+                        //The party has already won this many games. Make it shine!
+                        GetVictorySprite(i).GetComponent<Renderer>().material = SpriteActiveMaterial;
+                    }
+                    else
+                    {
+                        //The party has yet to win this many games. Make it dull.
+                        GetVictorySprite(i).GetComponent<Renderer>().material = SpriteSubdueMaterial;
+                    }
+                }
+                else
+                {
+                    //Hide this sprite. It's more than we need.
+                    GetVictorySprite(i).SetActive(false);
+                }
+            }
+        }
+    }
+
+    GameObject GetVictorySprite(int i)
+    {
+        if (i == 1) return Round1VictorySprite;
+        else if (i == 2) return Round2VictorySprite;
+        else if (i == 3) return Round3VictorySprite;
+        else if (i == 4) return Round4VictorySprite;
+
+        return Round1VictorySprite;
     }
 
     public void RefreshHealth(float currentHP, float originalHP)
@@ -78,14 +134,14 @@ public class PartyGroup : MonoBehaviour
         {
             _audioSource.PlayOneShot(
                 CritSounds[Random.Range(0, CritSounds.Count - 1)],
-                0.1f
+                0.5f
                 );
         }
         else if (AttackSounds != null && AttackSounds.Count > 0)
         {
             _audioSource.PlayOneShot(
                 AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
-                0.1f
+                0.5f
                 );
         }
     }
@@ -96,7 +152,7 @@ public class PartyGroup : MonoBehaviour
         {
             _audioSource.PlayOneShot(
                 FailSounds[Random.Range(0, FailSounds.Count - 1)],
-                0.1f
+                0.5f
                 );
         }
     }
