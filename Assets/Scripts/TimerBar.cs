@@ -12,12 +12,6 @@ public class TimerBar : MonoBehaviour
         _barInitialScaleX = transform.localScale.x;
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
     void Reset()
     {
         transform.localScale += new Vector3(

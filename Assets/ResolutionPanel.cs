@@ -5,9 +5,10 @@ using System.Collections;
 public class ResolutionPanel : GamePanel
 {
     private Text _victorText;
-    void Start()
+
+    void Awake()
     {
-        _victorText = gameObject.GetComponentInChildren<Text>();
+        _victorText = gameObject.GetComponentInChildren<Text>(true);
     }
 
     public void SetVictor(RoundResult roundResult)

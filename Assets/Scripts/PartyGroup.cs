@@ -31,13 +31,13 @@ public class PartyGroup : MonoBehaviour
     // Use this for initialization
     void Awake()
     {
-        _healthBar = gameObject.GetComponentInChildren<HealthBar>();
-        _damageSprite = gameObject.GetComponentInChildren<DamageSprite>();
-        _critSprite = gameObject.GetComponentInChildren<CritSprite>();
+        _healthBar = gameObject.GetComponentInChildren<HealthBar>(true);
+        _damageSprite = gameObject.GetComponentInChildren<DamageSprite>(true);
+        _critSprite = gameObject.GetComponentInChildren<CritSprite>(true);
         _audioSource = GetComponent<AudioSource>();
 
         //If we have to add multiple text boxes then we will need this script to sort through them and select the proper textbox
-        Text [] textBoxes = gameObject.GetComponentsInChildren<Text>();
+        Text [] textBoxes = gameObject.GetComponentsInChildren<Text>(true);
         if (textBoxes != null)
         {
             foreach (Text text in textBoxes)
