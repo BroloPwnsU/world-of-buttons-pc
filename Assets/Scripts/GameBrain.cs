@@ -83,7 +83,7 @@ public class GameBrain : MonoBehaviour
     #region Unity Built-In Functions
 
     // Use this for initialization
-    void Start()
+    void Awake()
     {
         _buffPanel = this.OptionsPanel.GetComponent<OptionsPanel>();
 
@@ -106,8 +106,8 @@ public class GameBrain : MonoBehaviour
             }
         }
 
-        _attackPanel = mainCanvas.GetComponentInChildren<AttackPanel>();
-        //_buffPanel = mainCanvas.GetComponentInChildren<OptionsPanel>();
+        _attackPanel = mainCanvas.GetComponentInChildren<AttackPanel>(true);
+        //_buffPanel = mainCanvas.GetComponentInChildren<OptionsPanel>(true);
     }
 
     /// <summary>
@@ -133,10 +133,7 @@ public class GameBrain : MonoBehaviour
 
             //From the title screen, only the attendant can actually start the game.
             //Attendant must press Enter to start.
-            if (_buttonMaster.IsStartKey())
-            {
-                StartGame();
-            }
+            //This button press will be handled by the title panel.
 
             #endregion
         }
@@ -146,12 +143,16 @@ public class GameBrain : MonoBehaviour
 
             //Players are not allowed to do anything during this period.
             //Since they don't have anything to do, we will just wait for the enter key to be pressed.
-            if (_buttonMaster.IsStartKey())
+            if (ButtonMaster.IsStartKey())
             {
                 EndOptionsScreen();
             }
 
             #endregion
+        }
+        else if (_gameState == GameState.Loading)
+        {
+            //Don't do anything. Let the loading panel handle it all.
         }
         else if (_gameState == GameState.GetReady)
         {
@@ -232,7 +233,7 @@ public class GameBrain : MonoBehaviour
     /// </summary>
     void CheckResetButton()
     {
-        if (_buttonMaster.IsResetKey())
+        if (ButtonMaster.IsResetKey())
         {
             RevertToTitleScreen();
             RenderGameState();
@@ -264,7 +265,7 @@ public class GameBrain : MonoBehaviour
         {
             if (gamePanel is TitlePanel)
             {
-                gamePanel.Show();
+                ((TitlePanel)gamePanel).StartTitleScreen(StartGame);
             }
             else
             {
@@ -392,6 +393,7 @@ public class GameBrain : MonoBehaviour
     void EndOptionsScreen()
     {
         StartCoroutine(UnthreadedDelay(1.1f, ApplyGameOptions));
+        StartLoadingScreen();
     }
 
     /// <summary>
@@ -470,9 +472,6 @@ public class GameBrain : MonoBehaviour
 
         //Re-initialize the buttons for the current fight.
         _buttonMaster.SetupButtons(_bossFight);
-
-        //Skip to prep screen
-        StartGetReadyScreen();
     }
 
     #endregion
@@ -514,6 +513,45 @@ public class GameBrain : MonoBehaviour
     }
 
     #endregion
+
+
+    #region State - Loading Screen
+
+    /// <summary>
+    /// Like pressing Reset on the game. Goes back to title screen and clears out the current game.
+    /// </summary>
+    void StartLoadingScreen()
+    {
+        _gameState = GameState.Loading;
+        RenderLoadingScreen();
+    }
+
+    /// <summary>
+    /// Show the title, hide everything else.
+    /// </summary>
+    void RenderLoadingScreen()
+    {
+        //Iterate through the panels to hide them, unless they are on the acceptable list.
+        foreach (GamePanel gamePanel in _gamePanels)
+        {
+            if (gamePanel is LoadingPanel)
+            {
+                ((LoadingPanel)gamePanel).StartLoadingPanel(EndLoadingScreen);
+            }
+            else
+            {
+                gamePanel.Hide();
+            }
+        }
+    }
+
+    void EndLoadingScreen()
+    {
+        StartGetReadyScreen();
+    }
+
+    #endregion
+
 
     #region State - Attack
 
@@ -742,7 +780,7 @@ public class GameBrain : MonoBehaviour
 
     void RenderGameState()
     {
-        ShowText(true, GameStateText);
+        TextUtility.ShowText(true, GameStateText);
         GameStateText.text = _gameState.ToString();
     }
 
@@ -757,29 +795,6 @@ public class GameBrain : MonoBehaviour
             ((int)(100 * _buffParty1CritChance)).ToString(),
             ((int)(100 * _buffParty2CritChance)).ToString()
             );
-    }
-
-    #endregion
-
-    #region Show Text
-
-    void ShowText(bool bShow, Text text)
-    {
-        CanvasGroup canvasGroup = text.rectTransform.GetComponent<CanvasGroup>();
-        if (bShow)
-        {
-            if (canvasGroup.interactable != true)
-                canvasGroup.interactable = true;
-            if (canvasGroup.alpha != 1.0f)
-                canvasGroup.alpha = 1.0f;
-        }
-        else
-        {
-            if (canvasGroup.interactable != false)
-                canvasGroup.interactable = false;
-            if (canvasGroup.alpha != 0.0f)
-                canvasGroup.alpha = 0.0f;
-        }
     }
 
     #endregion

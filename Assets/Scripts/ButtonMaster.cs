@@ -27,10 +27,10 @@ public class ButtonMaster
     private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick3;
     private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick1;
 
-    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick5;
-    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick6;
-    private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
-    private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
+    //private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick5;
+    //private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick6;
+    //private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
+    //private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
 
     #endregion
 
@@ -395,17 +395,17 @@ public class ButtonMaster
         }
     }
 
-    public bool IsQuitKey()
+    public static bool IsQuitKey()
     {
         return Input.GetKeyDown(KeyCode.Escape);
     }
 
-    public bool IsResetKey()
+    public static bool IsResetKey()
     {
         return Input.GetKeyDown(KeyCode.Minus);
     }
 
-    public bool IsStartKey()
+    public static bool IsStartKey()
     {
         return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
     }

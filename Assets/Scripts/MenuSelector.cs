@@ -16,7 +16,7 @@ public class MenuSelector : MonoBehaviour {
     void Awake ()
     {
         //If we have to add multiple text boxes then we will need this script to sort through them and select the proper textbox
-        Text[] textBoxes = gameObject.GetComponentsInChildren<Text>();
+        Text[] textBoxes = gameObject.GetComponentsInChildren<Text>(true);
         if (textBoxes != null)
         {
             foreach (Text text in textBoxes)
@@ -32,7 +32,7 @@ public class MenuSelector : MonoBehaviour {
             }
         }
 
-        MenuArrow[] arrows = gameObject.GetComponentsInChildren<MenuArrow>();
+        MenuArrow[] arrows = gameObject.GetComponentsInChildren<MenuArrow>(true);
         if (arrows != null)
         {
             foreach (MenuArrow scr in arrows)

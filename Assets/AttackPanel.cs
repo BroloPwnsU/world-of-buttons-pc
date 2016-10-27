@@ -23,7 +23,7 @@ public class AttackPanel : GamePanel
     public GameObject TimerPanel;
     public GameObject PanicModePanel;
 
-    private bool AutoInputDualActionMode = true;
+    //private bool AutoInputDualActionMode = true;
 
     private ButtonMaster _buttonMaster;
     private BattleSettings _battleSettings;
@@ -48,20 +48,20 @@ public class AttackPanel : GamePanel
 
     private bool _battleRaging = false;
     private bool _freezeTime = false;
-    private BattleMode _battleMode = BattleMode.Timed;
+    //private BattleMode _battleMode = BattleMode.Timed;
     private Action<RoundResult> EndRoundNotification;
 
-    void Start()
+    void Awake()
     {
         _battleRaging = false;
 
         _party1 = PlayerPanel.GetComponent<PartyGroup>();
-        _party1SuccessSprite = PlayerPanel.GetComponentInChildren<SuccessSprite>();
-        _party1FailSprite = PlayerPanel.GetComponentInChildren<FailSprite>();
+        _party1SuccessSprite = PlayerPanel.GetComponentInChildren<SuccessSprite>(true);
+        _party1FailSprite = PlayerPanel.GetComponentInChildren<FailSprite>(true);
 
         _party2 = BossPanel.GetComponent<PartyGroup>();
-        _party2SuccessSprite = BossPanel.GetComponentInChildren<SuccessSprite>();
-        _party2FailSprite = BossPanel.GetComponentInChildren<FailSprite>();
+        _party2SuccessSprite = BossPanel.GetComponentInChildren<SuccessSprite>(true);
+        _party2FailSprite = BossPanel.GetComponentInChildren<FailSprite>(true);
 
         _timerPanel = TimerPanel.GetComponent<TimerPanel>();
     }
@@ -110,7 +110,6 @@ public class AttackPanel : GamePanel
 
         //Start on normal mode, move to Panic Mode later
         PanicModePanel.SetActive(false);
-        _battleMode = BattleMode.Timed;
 
         StartAttackCycle(AttackMode.Normal);
     }
