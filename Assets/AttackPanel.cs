@@ -6,13 +6,13 @@ using System.Collections.Generic;
 
 public class AttackPanel : GamePanel
 {
+    public bool UseTimer;
+
     public GameObject Party1Success;
     public GameObject Party2Success;
     public GameObject Party1FailPanel;
     public GameObject Party2FailPanel;
 
-    public Text Party1ButtonNameText;
-    public Text Party2ButtonNameText;
     //public Text SuccessText;
     //public Text FailText;
     //public Text PlayerHealthText;
@@ -41,6 +41,7 @@ public class AttackPanel : GamePanel
     private float _timeLeft;
     private float _currentTimeLeftSeconds;
 
+    public Text ButtonNameText;
     private SuccessSprite _party1SuccessSprite;
     private SuccessSprite _party2SuccessSprite;
     private FailSprite _party1FailSprite;
@@ -153,16 +154,24 @@ public class AttackPanel : GamePanel
         //The attack timer starts as a high duration and slowly gets smaller as the game drags on.
         //We want to make the active screen longer in PVP. It's a race against each other, not the clock.
         float fMaximumActiveScreenSeconds;
-        if (_battleSettings.BossFight)
+        if (UseTimer)
+        {
             fMaximumActiveScreenSeconds = _battleSettings.InitialActiveScreenSeconds;
+        }
         else
-            fMaximumActiveScreenSeconds = _battleSettings.InitialActiveScreenSeconds * 5;
+        {
+            fMaximumActiveScreenSeconds = 9999;
+        }
 
         float fMinimumActiveScreenSeconds;
-        if (_battleSettings.BossFight)
+        if (UseTimer)
+        {
             fMinimumActiveScreenSeconds = _battleSettings.MinimumActiveScreenSeconds;
+        }
         else
-            fMinimumActiveScreenSeconds = _battleSettings.MinimumActiveScreenSeconds * 5;
+        {
+            fMinimumActiveScreenSeconds = 9998;
+        }
 
         //Set the time span based on the current cycle.
         //_currentActivePeriodSeconds = InitialActiveScreenSeconds - (ActiveSecondsDecreasePerCycle * _completedCycles);
@@ -184,14 +193,8 @@ public class AttackPanel : GamePanel
         // If it's a PVP battle, need to pick a button for each.
 
         //Start with Party 1, they will need a button regardless
-        _buttonMaster.SelectNewButtonForParty1();
-
-        //Let's check if the game is PVP, then select a button for party 2 (if necessary)
-        if (!_battleSettings.BossFight)
-        {
-            _buttonMaster.SelectNewButtonForParty2();
-        }
-
+        _buttonMaster.SelectNewButtons();
+        
         UpdateButtonNameText();
 
         #endregion
@@ -659,16 +662,31 @@ public class AttackPanel : GamePanel
         }
 
         if (!bSelfDamage)
-            partyAttack.MakeAttack(bCrit);
-
-        partyDefend.TakeDamage(
-            damage,
-            newHealth,
-            startHealth,
-            bCrit,
-            bSelfDamage
-            );
-
+        {
+            //Do a big fancy attack animation
+            partyAttack.MakeAttack(bCrit, () =>
+            {
+                partyDefend.TakeDamage(
+                    damage,
+                    newHealth,
+                    startHealth,
+                    bCrit,
+                    bSelfDamage
+                    );
+            });
+        }
+        else
+        {
+            //Damage thyself without a big attack animationa
+            partyDefend.TakeDamage(
+                damage,
+                newHealth,
+                startHealth,
+                bCrit,
+                bSelfDamage
+                );
+        }
+        
         return newHealth;
     }
 
@@ -700,24 +718,16 @@ public class AttackPanel : GamePanel
 
     void UpdateTimeLeftText()
     {
-        _timerPanel.SetTime(_timeLeft, _currentTimeLeftSeconds);
+        if (UseTimer)
+        {
+            _timerPanel.SetTime(_timeLeft, _currentTimeLeftSeconds);
+        }
     }
 
     void UpdateButtonNameText()
     {
         //Always show player 1 button commands
-        Party1ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
-
-        if (_battleSettings.BossFight)
-        {
-            ShowText(false, Party2ButtonNameText);
-        }
-        else
-        {
-            //If PVP, Show both button commands
-            ShowText(true, Party2ButtonNameText);
-            Party2ButtonNameText.text = _buttonMaster.GetCurrentParty2ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty2ActiveButton().NumberKey.ToString();
-        }
+        ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
     }
 
     IEnumerator UnthreadedDelay(float fSeconds, Action thingToExecute)

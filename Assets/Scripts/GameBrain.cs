@@ -9,8 +9,8 @@ public class GameBrain : MonoBehaviour
     #region Private Members
 
     private float _timeLeft;
-    
-    private ButtonMaster _buttonMaster = new ButtonMaster();
+
+    private ButtonMaster _buttonMaster;
 
     private GameState _gameState;
     private bool _bossFight = false;
@@ -35,6 +35,8 @@ public class GameBrain : MonoBehaviour
 
     #region Public Properties
 
+    public bool DuplicateButtons = true;
+    public bool FullSpread = false;
     public bool DebugMode = true;
 
     public GameObject MenuSelectorPrefab;
@@ -86,6 +88,7 @@ public class GameBrain : MonoBehaviour
     void Awake()
     {
         _buffPanel = this.OptionsPanel.GetComponent<OptionsPanel>();
+        _buttonMaster = new ButtonMaster(_bossFight, DuplicateButtons, FullSpread);
 
         AssembleGamePanelsAndScripts();
 
@@ -216,7 +219,6 @@ public class GameBrain : MonoBehaviour
 
     void ResetGameValues()
     {
-        _bossFight = true;
         _timeLeft = 0.0f;
 
         _buttonMaster.SetupButtons(_bossFight);
@@ -513,8 +515,7 @@ public class GameBrain : MonoBehaviour
     }
 
     #endregion
-
-
+    
     #region State - Loading Screen
 
     /// <summary>

@@ -5,7 +5,10 @@ using System.Collections.Generic;
 public class ButtonMaster
 {
     #region Properties
-    
+
+    private bool _bDuplicatedButtons = true;
+    private bool _bFullSpread = true;
+
     private List<GameButton> Party1ActiveButtons;
     private List<GameButton> Party2ActiveButtons;
 
@@ -22,27 +25,25 @@ public class ButtonMaster
 
     //private Dictionary<KeyCode, KeyCode> NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
     
-    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick2;
+    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick5;
     private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick4;
     private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick3;
     private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick1;
 
-    //private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick5;
-    //private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick6;
-    //private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
-    //private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
+    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick6;
+    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick1;
+    private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
+    private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
 
     #endregion
 
     #region Constructors/Initializers
 
-    public ButtonMaster()
+    public ButtonMaster(bool bIsBossFight, bool bDuplicatedButtons, bool bFullSpread)
     {
+        _bDuplicatedButtons = bDuplicatedButtons;
+        _bFullSpread = bFullSpread;
 
-    }
-
-    public ButtonMaster(bool bIsBossFight)
-    {
         SetupButtons(bIsBossFight);
     }
 
@@ -59,19 +60,20 @@ public class ButtonMaster
         if (bIsBossFight)
         {
             //Boss fight combines all the buttons.
-            Party1ActiveButtons.AddRange(GetParty1Buttons());
-            Party1ActiveButtons.AddRange(GetParty2Buttons());
+            Party1ActiveButtons.AddRange(GetParty1Buttons(_bFullSpread));
+            Party1ActiveButtons.AddRange(GetParty2Buttons(_bFullSpread));
 
             //Leave Party2ActiveButtons empty, because there is no party 2. Boss is AI!
         }
         else
         {
+            Debug.Log(_bFullSpread);
             //PVP
             //Player 1 and 2 on party 1
-            Party1ActiveButtons.AddRange(GetParty1Buttons());
+            Party1ActiveButtons.AddRange(GetParty1Buttons(_bFullSpread));
 
             //player 3 and 4 on party 2
-            Party2ActiveButtons.AddRange(GetParty2Buttons());
+            Party2ActiveButtons.AddRange(GetParty2Buttons(_bFullSpread));
         }
 
         AllActiveKeys = new List<KeyCode>();
@@ -98,67 +100,106 @@ public class ButtonMaster
         }
     }
 
-    public List<GameButton> GetParty1Buttons()
+    public List<GameButton> GetParty1Buttons(bool bFullSpread)
     {
-        //Add position A
-        List<GameButton> buttonList = BuildButtonList(
-            BoardPositon.A,
-            Party1PositonAJoystickAssignment
-            );
+        if (bFullSpread)
+        {
+            //Add position A
+            List<GameButton> buttonList = BuildButtonList(
+                BoardPositon.A,
+                Party1PositonAJoystickAssignment
+                );
 
-        //Add position B
-        buttonList.AddRange(BuildButtonList(
-            BoardPositon.B,
-            Party1PositonBJoystickAssignment
-            ));
+            //Add position B
+            buttonList.AddRange(BuildButtonList(
+                BoardPositon.B,
+                Party1PositonBJoystickAssignment
+                ));
 
-        //Add position C
-        /*buttonList.AddRange(BuildButtonList(
-            BoardPositon.C,
-            Party1PositonCJoystickAssignment
-            ));
+            //Add position C
+            buttonList.AddRange(BuildButtonList(
+                BoardPositon.C,
+                Party1PositonCJoystickAssignment
+                ));
 
-        //Add position D
-        buttonList.AddRange(BuildButtonList(
-            BoardPositon.D,
-            Party1PositonDJoystickAssignment
-            ));*/
+            //Add position D
+            buttonList.AddRange(BuildButtonList(
+                BoardPositon.D,
+                Party1PositonDJoystickAssignment
+                ));
 
-        return buttonList;
+            return buttonList;
+        }
+        else
+        {
+            List<GameButton> buttonList = BuildButtonList(
+                BoardPositon.B,
+                Party1PositonBJoystickAssignment
+                );
+            return buttonList;
+        }
     }
 
-    public List<GameButton> GetParty2Buttons()
+    public List<GameButton> GetParty2Buttons(bool bFullSpread)
     {
-        //Add position A
-        List<GameButton> buttonList = BuildButtonList(
-            BoardPositon.C,
-            Party1PositonCJoystickAssignment
-            );
+        if (bFullSpread)
+        {
+            //Add position A
+            List<GameButton> buttonList = BuildButtonList(
+                BoardPositon.A,
+                Party2PositonAJoystickAssignment
+                );
 
-        //Add position B
-        buttonList.AddRange(BuildButtonList(
-            BoardPositon.D,
-            Party1PositonDJoystickAssignment
-            ));
-            
-        //Add position C
-        /*buttonList.AddRange(BuildButtonList(
-            BoardPositon.C,
-            Party2PositonCJoystickAssignment
-            ));
+            //Add position B
+            buttonList.AddRange(BuildButtonList(
+                BoardPositon.B,
+                Party2PositonBJoystickAssignment
+                ));
 
-        //Add position D
-        buttonList.AddRange(BuildButtonList(
-            BoardPositon.D,
-            Party2PositonDJoystickAssignment
-            ));*/
+            //Add position C
+            buttonList.AddRange(BuildButtonList(
+                BoardPositon.C,
+                Party2PositonCJoystickAssignment
+                ));
 
-        return buttonList;
+            //Add position D
+            buttonList.AddRange(BuildButtonList(
+                BoardPositon.D,
+                Party2PositonDJoystickAssignment
+                ));
+
+            return buttonList;
+        }
+        else
+        {
+            List<GameButton> buttonList = BuildButtonList(
+                BoardPositon.B,
+                Party2PositonBJoystickAssignment
+                );
+            return buttonList;
+        }
     }
 
     #endregion
 
-    public GameButton SelectNewButtonForParty1()
+    public GameButtonGroup SelectNewButtons()
+    {
+        GameButton team1Button = SelectNewButtonForParty1();
+        GameButton team2Button;
+        if (_bDuplicatedButtons)
+        {
+            //If we're duplicating buttons
+            team2Button = SelectNewButtonForParty2(team1Button);
+        }
+        else
+        {
+            team2Button = SelectNewButtonForParty2();
+        }
+
+        return new GameButtonGroup(team1Button, team2Button);
+    }
+
+    private GameButton SelectNewButtonForParty1()
     {
         GameButton gb = GetRandomButton(Party1ActiveButtons, Party1CurrentButton, Party1PreviousButton);
 
@@ -168,7 +209,7 @@ public class ButtonMaster
         return gb;
     }
 
-    public GameButton SelectNewButtonForParty2()
+    private GameButton SelectNewButtonForParty2()
     {
         GameButton gb = GetRandomButton(Party2ActiveButtons, Party2CurrentButton, Party2PreviousButton);
 
@@ -176,6 +217,40 @@ public class ButtonMaster
         Party2CurrentButton = gb;
 
         return gb;
+    }
+
+    private GameButton SelectNewButtonForParty2(GameButton team1Button)
+    {
+        GameButton gb = GetMatchingButton(Party2ActiveButtons, team1Button);
+
+        Party2PreviousButton = Party2CurrentButton;
+        Party2CurrentButton = gb;
+
+        return gb;
+    }
+
+    private GameButton GetMatchingButton(List<GameButton> gameButtons, GameButton matchingButton)
+    {
+        int wButtonCount = gameButtons.Count;
+        if (matchingButton == null)
+        {
+            //Can't match a null button. Just return a random.
+            return gameButtons[Random.Range(0, wButtonCount)];
+        }
+        else
+        {
+            //Find a matching button in the list of active buttons.
+            foreach (GameButton gameButton in gameButtons)
+            {
+                if (gameButton.Name == matchingButton.Name)
+                {
+                    return gameButton;
+                }
+            }
+
+            //NewButton should not be the same as current button, so replace it.
+            throw new System.Exception("Could not find matching button.");
+        }
     }
 
     static GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
@@ -205,7 +280,7 @@ public class ButtonMaster
             return newButton;
         }
     }
-    
+
     public GameButton GetCurrentParty1ActiveButton()
     {
         return Party1CurrentButton;
@@ -476,6 +551,22 @@ public class ButtonMaster
     }
 }
 
+public class GameButtonGroup
+{
+    public GameButton Team1Button = null;
+    public GameButton Team2Button = null;
+
+    public GameButtonGroup(GameButton team1Button)
+        : this(team1Button, null)
+    {
+    }
+
+    public GameButtonGroup(GameButton team1Button, GameButton team2Button)
+    {
+        Team1Button = team1Button;
+        Team2Button = team2Button;
+    }
+}
 
 public class GameButton
 {

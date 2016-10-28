@@ -33,6 +33,8 @@ public class PartyGroup : MonoBehaviour
     private Vector3 _PVE3StartPosition;
     private Vector3 _PVE4StartPosition;
 
+    private System.Action TriggerDamageEffect;
+
     #endregion
 
     #region Public Properties
@@ -207,8 +209,10 @@ public class PartyGroup : MonoBehaviour
         _healthBar.SetCurrentHealth(currentHP, originalHP);
     }
 
-    public void MakeAttack(bool bCrit)
+    public void MakeAttack(bool bCrit, System.Action triggerDamageEffect)
     {
+        TriggerDamageEffect = triggerDamageEffect;
+
         //Attack consists of:
         //1a. One player jumps, translating in an arc towards a button in the center of the screen over the course of 0.5s
         //1b. The player sprite enters the jump animation. 
@@ -240,7 +244,6 @@ public class PartyGroup : MonoBehaviour
         StartAttackJumpTranslation(player);
         StartJumpAnimation(player);
         PlayJumpNoise();
-
     }
     
     #region Jumper Position Accessors
@@ -396,6 +399,8 @@ public class PartyGroup : MonoBehaviour
     {
         _timeElapsed = 0;
         _currentJumpState = PlayerSpriteJumpState.Pressing;
+
+        TriggerDamageEffect();
     }
 
     void StopJumpTranslation()
@@ -524,9 +529,15 @@ public class PartyGroup : MonoBehaviour
         {
             PlayFailSound();
         }
+        else
+        {
+            PlayAttackSound(bCrit);
+        }
     }
 
     #endregion
+
+    #region Utility Enums and Consts
 
     public enum PlayerSprite
     {
@@ -552,4 +563,6 @@ public class PartyGroup : MonoBehaviour
     const string PVE2_NAME = "PVE2";
     const string PVE3_NAME = "PVE3";
     const string PVE4_NAME = "PVE4";
+
+    #endregion
 }
