@@ -5,18 +5,45 @@ using UnityEngine.UI;
 
 public class PartyGroup : MonoBehaviour
 {
+    #region Private Properties
+
     //There is a component called...
     private HealthBar _healthBar;
     private DamageSprite _damageSprite;
     private CritSprite _critSprite;
     private Text _healthText;
+    private bool _bIsPVP = false;
 
     private AudioSource _audioSource;
+
+    private float _timeElapsed = 0;
+    private float _jumpDuration = 0.5f;
+    private float _pressDuration = 0.1f;
+    private Vector3 _characterSpriteEndPosition;
+
+    private PlayerSpriteJumpState _currentJumpState;
+    private PlayerSprite _activePlayerSprite;
+    private Transform _activePlayerSpriteTransform;
+    private Vector3 _activePlayerSpriteStartPosition;
+
+    private Vector3 _PVP1StartPosition;
+    private Vector3 _PVP2StartPosition;
+    private Vector3 _PVE1StartPosition;
+    private Vector3 _PVE2StartPosition;
+    private Vector3 _PVE3StartPosition;
+    private Vector3 _PVE4StartPosition;
+
+    #endregion
+
+    #region Public Properties
+
+    public List<AudioClip> JumpSounds;
     public List<AudioClip> AttackSounds;
     public List<AudioClip> CritSounds;
     public List<AudioClip> FailSounds;
 
-    private bool _bIsPVP = false;
+    public float JumpVolume = 0.5f;
+
     public GameObject PVESpritePanel;
     public GameObject PVPSpritePanel;
 
@@ -28,6 +55,12 @@ public class PartyGroup : MonoBehaviour
     public Material SpriteSubdueMaterial;
     public Material SpriteActiveMaterial;
 
+    public float ButtonX = 0;
+    public float ButtonY = 0;
+    public float ButtonZ = 0;
+
+    #endregion
+
     // Use this for initialization
     void Awake()
     {
@@ -37,7 +70,7 @@ public class PartyGroup : MonoBehaviour
         _audioSource = GetComponent<AudioSource>();
 
         //If we have to add multiple text boxes then we will need this script to sort through them and select the proper textbox
-        Text [] textBoxes = gameObject.GetComponentsInChildren<Text>(true);
+        Text[] textBoxes = gameObject.GetComponentsInChildren<Text>(true);
         if (textBoxes != null)
         {
             foreach (Text text in textBoxes)
@@ -46,6 +79,53 @@ public class PartyGroup : MonoBehaviour
                 {
                     _healthText = text;
                     break;
+                }
+            }
+        }
+
+        _currentJumpState = PlayerSpriteJumpState.None;
+        SetJumpStartPositions();
+        _characterSpriteEndPosition = new Vector3(ButtonX, ButtonY, 1);
+    }
+
+    void Update()
+    {
+        if (_currentJumpState == PlayerSpriteJumpState.Attacking
+            || _currentJumpState == PlayerSpriteJumpState.Retreating
+            || _currentJumpState == PlayerSpriteJumpState.Pressing)
+        {
+            _timeElapsed += Time.deltaTime;
+
+            _activePlayerSpriteTransform.position = GetJumpingSpritePositon(
+                _currentJumpState,
+                _timeElapsed,
+                _jumpDuration,
+                _activePlayerSpriteStartPosition,
+                _characterSpriteEndPosition
+                );
+
+            if (_currentJumpState == PlayerSpriteJumpState.Attacking)
+            {
+                if (_timeElapsed >= _jumpDuration)
+                {
+                    //We've been standing still too long, return to the start position.
+                    StartPressingTranslation();
+                }
+            }
+            else if (_currentJumpState == PlayerSpriteJumpState.Pressing)
+            {
+                if (_timeElapsed >= _pressDuration)
+                {
+                    //We've been standing still too long, return to the start position.
+                    StartRetreatJumpTranslation();
+                }
+            }
+            else if (_currentJumpState == PlayerSpriteJumpState.Retreating)
+            {
+                if (_timeElapsed >= _jumpDuration)
+                {
+                    //We've been standing still too long, return to the start position.
+                    StopJumpTranslation();
                 }
             }
         }
@@ -105,6 +185,10 @@ public class PartyGroup : MonoBehaviour
                 }
             }
         }
+
+        _currentJumpState = PlayerSpriteJumpState.None;
+        //Reset jumper positions
+        ResetAllJumpPositions();
     }
 
     GameObject GetVictorySprite(int i)
@@ -125,7 +209,275 @@ public class PartyGroup : MonoBehaviour
 
     public void MakeAttack(bool bCrit)
     {
-        PlayAttackSound(bCrit);
+        //Attack consists of:
+        //1a. One player jumps, translating in an arc towards a button in the center of the screen over the course of 0.5s
+        //1b. The player sprite enters the jump animation. 
+        //1c. A jump noise is played.
+        //2a. The player sprite lands and stops translating.
+        //2b. The player sprite transitions from jump animation to landing animation.
+        //2c. A landing sound is played.
+        //3a. The player jumps back, translating in an arc over 0.5s.
+        //3b. The player sprite enters the jump animation.
+        //3c. (No jump sound)
+        //4a. The player sprite lands and stops translating.
+        //4b. The player sprite transitions from jump animation to idle animation.
+
+        PlayerSprite player;
+        
+        if (UnityEngine.Random.Range(0,2) == 1)
+        {
+            player = PlayerSprite.PVP1;
+        }
+        else
+        {
+            player = PlayerSprite.PVP2;
+        }
+
+
+        _activePlayerSprite = player;
+        _activePlayerSpriteTransform = GetPlayerSpriteTransform(player);
+
+        StartAttackJumpTranslation(player);
+        StartJumpAnimation(player);
+        PlayJumpNoise();
+
+    }
+    
+    #region Jumper Position Accessors
+
+    void SetJumpStartPositions()
+    {
+        foreach (Transform t in PVPSpritePanel.transform)
+        {
+            if (t.name == PVP1_NAME)
+            {
+                _PVP1StartPosition = t.position;
+            }
+            else if (t.name == PVP2_NAME)
+            {
+                _PVP2StartPosition = t.position;
+            }
+            else if (t.name == PVE1_NAME)
+            {
+                _PVE1StartPosition = t.position;
+            }
+            else if (t.name == PVE2_NAME)
+            {
+                _PVE2StartPosition = t.position;
+            }
+            else if (t.name == PVE3_NAME)
+            {
+                _PVE3StartPosition = t.position;
+            }
+            else if (t.name == PVE4_NAME)
+            {
+                _PVE4StartPosition = t.position;
+            }
+        }
+    }
+
+    void ResetAllJumpPositions()
+    {
+        foreach (Transform t in PVPSpritePanel.transform)
+        {
+            if (t.name == PVP1_NAME)
+            {
+                t.position = _PVP1StartPosition;
+            }
+            else if (t.name == PVP2_NAME)
+            {
+                t.position = _PVP2StartPosition;
+            }
+            else if (t.name == PVE1_NAME)
+            {
+                t.position = _PVE1StartPosition;
+            }
+            else if (t.name == PVE2_NAME)
+            {
+                t.position = _PVE2StartPosition;
+            }
+            else if (t.name == PVE3_NAME)
+            {
+                t.position = _PVE3StartPosition;
+            }
+            else if (t.name == PVE4_NAME)
+            {
+                t.position = _PVE4StartPosition;
+            }
+        }
+    }
+
+    Vector3 GetStartPosition(PlayerSprite player)
+    {
+        switch (player)
+        {
+            case PlayerSprite.PVP1:
+                return _PVP1StartPosition;
+            case PlayerSprite.PVP2:
+                return _PVP2StartPosition;
+            case PlayerSprite.PVE1:
+                return _PVE1StartPosition;
+            case PlayerSprite.PVE2:
+                return _PVE2StartPosition;
+            case PlayerSprite.PVE3:
+                return _PVE3StartPosition;
+            case PlayerSprite.PVE4:
+                return _PVE4StartPosition;
+            default:
+                return Vector3.zero;
+        }
+    }
+
+    Transform GetPlayerSpriteTransform(PlayerSprite player)
+    {
+        if (player == PlayerSprite.PVP1 || player == PlayerSprite.PVP2)
+        {
+            foreach (Transform t in PVPSpritePanel.transform)
+            {
+                if (player == PlayerSprite.PVP1 && t.name == PVP1_NAME)
+                {
+                    return t;
+                }
+                else if (player == PlayerSprite.PVP2 && t.name == PVP2_NAME)
+                {
+                    return t;
+                }
+            }
+        }
+        else if (player == PlayerSprite.PVE1 || player == PlayerSprite.PVE2 || player == PlayerSprite.PVE3 || player == PlayerSprite.PVE4)
+        {
+            foreach (Transform t in PVESpritePanel.transform)
+            {
+                if (player == PlayerSprite.PVE1 && t.name == PVE1_NAME)
+                {
+                    return t;
+                }
+                else if (player == PlayerSprite.PVE2 && t.name == PVE2_NAME)
+                {
+                    return t;
+                }
+                else if (player == PlayerSprite.PVE3 && t.name == PVE3_NAME)
+                {
+                    return t;
+                }
+                else if (player == PlayerSprite.PVE4 && t.name == PVE4_NAME)
+                {
+                    return t;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    #endregion
+
+    #region State transition
+
+    void StartAttackJumpTranslation(PlayerSprite player)
+    {
+        Transform playerSpriteTransform = GetPlayerSpriteTransform(player);
+        if (playerSpriteTransform != null)
+        {
+            Debug.Log("Hi");
+            _activePlayerSpriteStartPosition = GetStartPosition(player);
+            _currentJumpState = PlayerSpriteJumpState.Attacking;
+            _timeElapsed = 0;
+        }
+    }
+
+    void StartRetreatJumpTranslation()
+    {
+        _currentJumpState = PlayerSpriteJumpState.Retreating;
+        _timeElapsed = 0;
+    }
+
+    void StartPressingTranslation()
+    {
+        _timeElapsed = 0;
+        _currentJumpState = PlayerSpriteJumpState.Pressing;
+    }
+
+    void StopJumpTranslation()
+    {
+        _timeElapsed = 0;
+        _currentJumpState = PlayerSpriteJumpState.None;
+    }
+
+    #endregion
+
+    #region Jump Translations
+
+    Vector3 GetJumpingSpritePositon(PlayerSpriteJumpState jumpState, float timeElapsed, float jumpDuration, Vector3 currentStartPosition, Vector3 buttonPosition)
+    {
+        if (jumpState == PlayerSpriteJumpState.None)
+        {
+            //Don't do anything. No jump is happening. This should never even be called.
+            return currentStartPosition;
+        }
+        else if (jumpState == PlayerSpriteJumpState.Pressing)
+        {
+            //He's standing on the button for just a split second.
+            //Just have him hold the standing point.
+
+            return buttonPosition;
+        }
+        else
+        {
+            if (timeElapsed > jumpDuration)
+            {
+                timeElapsed = jumpDuration;
+            }
+
+            //Jumping, either towards or away. Render the current position.
+            Vector3 startPoint;
+            Vector3 endPoint;
+
+            if (jumpState == PlayerSpriteJumpState.Attacking)
+            {
+                startPoint = currentStartPosition;
+                endPoint = buttonPosition;
+            }
+            else
+            {
+                startPoint = buttonPosition;
+                endPoint = currentStartPosition;
+            }
+
+            float x = startPoint.x + (((endPoint.x - startPoint.x) / jumpDuration) * timeElapsed);
+            float y = startPoint.y + (((endPoint.y - startPoint.y) / jumpDuration) * timeElapsed);
+            float z = startPoint.z;
+
+
+            //Y bonus parabola
+            float ybonus = 1 - ((4 / (jumpDuration * jumpDuration)) * Mathf.Pow((timeElapsed - (jumpDuration / 2)), 2));
+            ybonus *= 3;
+            return new Vector3(x, y + ybonus, z);
+        }
+    }
+
+    #endregion
+
+    #region Sprite Animations
+
+    void StartJumpAnimation(PlayerSprite player)
+    {
+        //Doesn't do shit. Need to add this once we have created a jump animation clip.
+    }
+
+    #endregion
+
+    #region Noises
+
+    void PlayJumpNoise()
+    {
+        if (JumpSounds != null && JumpSounds.Count > 0)
+        {
+            _audioSource.PlayOneShot(
+            JumpSounds[Random.Range(0, JumpSounds.Count - 1)],
+            JumpVolume
+            );
+        }
     }
 
     void PlayAttackSound(bool bCrit)
@@ -173,4 +525,31 @@ public class PartyGroup : MonoBehaviour
             PlayFailSound();
         }
     }
+
+    #endregion
+
+    public enum PlayerSprite
+    {
+        PVP1,
+        PVP2,
+        PVE1,
+        PVE2,
+        PVE3,
+        PVE4
+    }
+
+    public enum PlayerSpriteJumpState
+    {
+        None,
+        Attacking,
+        Retreating,
+        Pressing
+    }
+
+    const string PVP1_NAME = "PVP1";
+    const string PVP2_NAME = "PVP2";
+    const string PVE1_NAME = "PVE1";
+    const string PVE2_NAME = "PVE2";
+    const string PVE3_NAME = "PVE3";
+    const string PVE4_NAME = "PVE4";
 }
