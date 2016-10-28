@@ -698,22 +698,22 @@ public class AttackPanel : GamePanel
 
     void ShowParty1Success()
     {
-        _party1SuccessSprite.Show();
+        //_party1SuccessSprite.Show();
     }
 
     void ShowParty2Success()
     {
-        _party2SuccessSprite.Show();
+       // _party2SuccessSprite.Show();
     }
 
     void ShowParty1Fail()
     {
-        _party1FailSprite.Show();
+        //_party1FailSprite.Show();
     }
 
     void ShowParty2Fail()
     {
-        _party2FailSprite.Show();
+        //_party2FailSprite.Show();
     }
 
     void UpdateTimeLeftText()
