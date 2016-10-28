@@ -89,8 +89,8 @@ public class CharacterCard : MonoBehaviour {
         _characterText.text = FormatText(
             "Steve the Sorcerer",
             "Party Wizard",
-            "Conjure Beer",
-            "Once weilder of the Staff of Gal'thorin, now retired. Spends free time frat parties making refreshments 'disappear.'"
+            "Mildly Magic Missile",
+            "Former wielder of the Staff of Gal'thorin, now retired. Spends free time frat parties making refreshments 'disappear'."
             );
     }
 

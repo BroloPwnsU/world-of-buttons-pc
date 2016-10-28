@@ -42,10 +42,10 @@ public class AttackPanel : GamePanel
     private float _currentTimeLeftSeconds;
 
     public Text ButtonNameText;
-    private SuccessSprite _party1SuccessSprite;
-    private SuccessSprite _party2SuccessSprite;
-    private FailSprite _party1FailSprite;
-    private FailSprite _party2FailSprite;
+    //private SuccessSprite _party1SuccessSprite;
+    //private SuccessSprite _party2SuccessSprite;
+    //private FailSprite _party1FailSprite;
+    //private FailSprite _party2FailSprite;
 
     private bool _battleRaging = false;
     private bool _freezeTime = false;
@@ -57,12 +57,12 @@ public class AttackPanel : GamePanel
         _battleRaging = false;
 
         _party1 = PlayerPanel.GetComponent<PartyGroup>();
-        _party1SuccessSprite = PlayerPanel.GetComponentInChildren<SuccessSprite>(true);
-        _party1FailSprite = PlayerPanel.GetComponentInChildren<FailSprite>(true);
+        //_party1SuccessSprite = PlayerPanel.GetComponentInChildren<SuccessSprite>(true);
+        //_party1FailSprite = PlayerPanel.GetComponentInChildren<FailSprite>(true);
 
         _party2 = BossPanel.GetComponent<PartyGroup>();
-        _party2SuccessSprite = BossPanel.GetComponentInChildren<SuccessSprite>(true);
-        _party2FailSprite = BossPanel.GetComponentInChildren<FailSprite>(true);
+        //_party2SuccessSprite = BossPanel.GetComponentInChildren<SuccessSprite>(true);
+        //_party2FailSprite = BossPanel.GetComponentInChildren<FailSprite>(true);
 
         _timerPanel = TimerPanel.GetComponent<TimerPanel>();
     }

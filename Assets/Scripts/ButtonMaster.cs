@@ -182,149 +182,7 @@ public class ButtonMaster
 
     #endregion
 
-    public GameButtonGroup SelectNewButtons()
-    {
-        GameButton team1Button = SelectNewButtonForParty1();
-        GameButton team2Button;
-        if (_bDuplicatedButtons)
-        {
-            //If we're duplicating buttons
-            team2Button = SelectNewButtonForParty2(team1Button);
-        }
-        else
-        {
-            team2Button = SelectNewButtonForParty2();
-        }
-
-        return new GameButtonGroup(team1Button, team2Button);
-    }
-
-    private GameButton SelectNewButtonForParty1()
-    {
-        GameButton gb = GetRandomButton(Party1ActiveButtons, Party1CurrentButton, Party1PreviousButton);
-
-        Party1PreviousButton = Party1CurrentButton;
-        Party1CurrentButton = gb;
-
-        return gb;
-    }
-
-    private GameButton SelectNewButtonForParty2()
-    {
-        GameButton gb = GetRandomButton(Party2ActiveButtons, Party2CurrentButton, Party2PreviousButton);
-
-        Party2PreviousButton = Party2CurrentButton;
-        Party2CurrentButton = gb;
-
-        return gb;
-    }
-
-    private GameButton SelectNewButtonForParty2(GameButton team1Button)
-    {
-        GameButton gb = GetMatchingButton(Party2ActiveButtons, team1Button);
-
-        Party2PreviousButton = Party2CurrentButton;
-        Party2CurrentButton = gb;
-
-        return gb;
-    }
-
-    private GameButton GetMatchingButton(List<GameButton> gameButtons, GameButton matchingButton)
-    {
-        int wButtonCount = gameButtons.Count;
-        if (matchingButton == null)
-        {
-            //Can't match a null button. Just return a random.
-            return gameButtons[Random.Range(0, wButtonCount)];
-        }
-        else
-        {
-            //Find a matching button in the list of active buttons.
-            foreach (GameButton gameButton in gameButtons)
-            {
-                if (gameButton.Name == matchingButton.Name)
-                {
-                    return gameButton;
-                }
-            }
-
-            //NewButton should not be the same as current button, so replace it.
-            throw new System.Exception("Could not find matching button.");
-        }
-    }
-
-    static GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
-    {
-        int wButtonCount = gameButtons.Count;
-        if (currentButton == null)
-        {
-            //The first button will be truly random because we don't have to worry about copying a previous button.
-            return gameButtons[Random.Range(0, wButtonCount)];
-        }
-        else
-        {
-            //If we've already got a current button then we need to randomly select a new one... but not the same one.
-            GameButton newButton = currentButton;
-            int wCount = 0;
-            while (((newButton.NumberKey == currentButton.NumberKey)
-                        || (previousButton != null && (newButton.NumberKey == previousButton.NumberKey)))
-                    && wCount < (wButtonCount * 2))
-            {
-                int wRandom = Random.Range(0, wButtonCount);
-                //Keep cycling until we get a different random key than the one 
-                newButton = gameButtons[wRandom];
-                wCount++;
-            }
-
-            //NewButton should not be the same as current button, so replace it.
-            return newButton;
-        }
-    }
-
-    public GameButton GetCurrentParty1ActiveButton()
-    {
-        return Party1CurrentButton;
-    }
-
-    public GameButton GetCurrentParty2ActiveButton()
-    {
-        return Party2CurrentButton;
-    }
-    
-    public List<KeyCode> GetAllActiveKeys()
-    {
-        return AllActiveKeys;
-    }
-
-    public bool IsCurrentButtonParty1(KeyCode numberKey)
-    {
-        return (Party1CurrentButton != null
-            && Party1CurrentButton.NumberKey == numberKey);
-    }
-
-    public bool IsCurrentButtonParty2(KeyCode numberKey)
-    {
-        return (Party2CurrentButton != null
-            && Party2CurrentButton.NumberKey == numberKey);
-    }
-
-    public bool IsKeyParty1(KeyCode key)
-    {
-        return Party1Dictionary.ContainsKey(key);
-    }
-
-    public bool IsKeyParty2(KeyCode key)
-    {
-        return Party2Dictionary.ContainsKey(key);
-    }
-    
-    public enum BoardPositon
-    {
-        A,
-        B,
-        C,
-        D
-    }
+    #region Button List Building
 
     public List<GameButton> BuildButtonList(BoardPositon boardPositon, JoystickAssignment joystickAssignment)
     {
@@ -344,9 +202,6 @@ public class ButtonMaster
 
         return gbList;
     }
-
-    //Argue over spelling
-
 
     //When AutoInputDualActionMode is true then we simulate the Button Letter Key input during the active screen.
     List<KeyCode> GetKeyCodeListByJoystickAssignment(JoystickAssignment ja)
@@ -470,6 +325,183 @@ public class ButtonMaster
         }
     }
 
+    List<string> GetButtonNameListByBoardPosition(BoardPositon boardPositon)
+    {
+        switch (boardPositon)
+        {
+            case BoardPositon.D:
+                return new List<string>()
+                {
+                    { "Play an Advertisement" },
+                    { "Holy Word: Annoy" },
+                    { "Flying Groin Stomp" },
+                    { "Cartwheeling Pile Driver" },
+                    { "Thrusting Hip Strike" },
+
+                    { "360 No Scope" },
+                    { "420 Blaze 'Em" },
+                    { "Spinning Neck Chop" },
+                    { "Spinning Meat Cleaver" },
+                    { "Splintering Mace Clout" },
+                };
+            case BoardPositon.C:
+                return new List<string>()
+                {
+                    { "Vicious Chest Poke" },
+                    { "Bedazzling Blade" },
+                    { "Bewitching Blast" },
+                    { "Befuddling Backhand" },
+                    { "Don't Touch Anything" },
+
+                    { "Activate Hax" },
+                    { "Super Intense Stare" },
+                    { "Super Insensitive Slander" },
+                    { "Tiger's Claw Grasps the Pearls" },
+                    { "Viper's Fang Stabs the Kiwis" }
+                };
+            case BoardPositon.B:
+                return new List<string>()
+                {
+                    { "Long Distance Expectoration" }, //Especially Good Expectoration
+                    { "Short Distance Assassination" }, //Especially Good Expectoration
+                    { "Fake High Five" },
+                    { "Rake Thine Face" },
+                    { "Poetry Choke Slam" },
+
+                    { "Sweep the Leg" },
+                    { "Sweep the Floor" },
+                    { "Spray and Pray" },
+                    { "Tank and Spank" },
+                    { "Spin to Win" },
+                };
+            case BoardPositon.A:
+                return new List<string>()
+                {
+                    { "Blasphemous Belch" },
+                    { "Pulverizing Punch" },
+                    { "Taunt (A Second Time)" },
+                    { "Inflict Flesh Wound" },
+
+                    { "Rage Silently" },
+                    { "Flail Wildly" },
+                    { "Get Comfortable" },
+
+                    { "Mildly Magic Missile" },
+                    { "Mostly Magic Missile" },
+                    { "Markedly Magic Missile" },
+                };
+            default:
+                throw new System.Exception("Invalid board positon.");
+        }
+    }
+
+    #endregion
+
+    #region Select New Active Buttons
+
+    public GameButtonGroup SelectNewButtons()
+    {
+        GameButton team1Button = SelectNewButtonForParty1();
+        GameButton team2Button;
+        if (_bDuplicatedButtons)
+        {
+            //If we're duplicating buttons
+            team2Button = SelectNewButtonForParty2(team1Button);
+        }
+        else
+        {
+            team2Button = SelectNewButtonForParty2();
+        }
+
+        return new GameButtonGroup(team1Button, team2Button);
+    }
+
+    private GameButton SelectNewButtonForParty1()
+    {
+        GameButton gb = GetRandomButton(Party1ActiveButtons, Party1CurrentButton, Party1PreviousButton);
+
+        Party1PreviousButton = Party1CurrentButton;
+        Party1CurrentButton = gb;
+
+        return gb;
+    }
+
+    private GameButton SelectNewButtonForParty2()
+    {
+        GameButton gb = GetRandomButton(Party2ActiveButtons, Party2CurrentButton, Party2PreviousButton);
+
+        Party2PreviousButton = Party2CurrentButton;
+        Party2CurrentButton = gb;
+
+        return gb;
+    }
+
+    private GameButton SelectNewButtonForParty2(GameButton team1Button)
+    {
+        GameButton gb = GetMatchingButton(Party2ActiveButtons, team1Button);
+
+        Party2PreviousButton = Party2CurrentButton;
+        Party2CurrentButton = gb;
+
+        return gb;
+    }
+
+    private GameButton GetMatchingButton(List<GameButton> gameButtons, GameButton matchingButton)
+    {
+        int wButtonCount = gameButtons.Count;
+        if (matchingButton == null)
+        {
+            //Can't match a null button. Just return a random.
+            return gameButtons[Random.Range(0, wButtonCount)];
+        }
+        else
+        {
+            //Find a matching button in the list of active buttons.
+            foreach (GameButton gameButton in gameButtons)
+            {
+                if (gameButton.Name == matchingButton.Name)
+                {
+                    return gameButton;
+                }
+            }
+
+            //NewButton should not be the same as current button, so replace it.
+            throw new System.Exception("Could not find matching button.");
+        }
+    }
+
+    static GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
+    {
+        int wButtonCount = gameButtons.Count;
+        if (currentButton == null)
+        {
+            //The first button will be truly random because we don't have to worry about copying a previous button.
+            return gameButtons[Random.Range(0, wButtonCount)];
+        }
+        else
+        {
+            //If we've already got a current button then we need to randomly select a new one... but not the same one.
+            GameButton newButton = currentButton;
+            int wCount = 0;
+            while (((newButton.NumberKey == currentButton.NumberKey)
+                        || (previousButton != null && (newButton.NumberKey == previousButton.NumberKey)))
+                    && wCount < (wButtonCount * 2))
+            {
+                int wRandom = Random.Range(0, wButtonCount);
+                //Keep cycling until we get a different random key than the one 
+                newButton = gameButtons[wRandom];
+                wCount++;
+            }
+
+            //NewButton should not be the same as current button, so replace it.
+            return newButton;
+        }
+    }
+
+    #endregion
+
+    #region Check Buttons
+
     public static bool IsQuitKey()
     {
         return Input.GetKeyDown(KeyCode.Escape);
@@ -485,70 +517,44 @@ public class ButtonMaster
         return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
     }
 
-    List<string> GetButtonNameListByBoardPosition(BoardPositon boardPositon)
+    public GameButton GetCurrentParty1ActiveButton()
     {
-        switch (boardPositon)
-        {
-            case BoardPositon.D:
-                return new List<string>()
-                {
-                    { "Flying Groin Stomp" },
-                    { "Aggrevate Old Tap-Dancing Injury" },
-                    { "Spray and Pray" },
-                    { "Tank and Spank" },
-                    { "Falcon Punch!" },
-                    { "Overcook the Roast" },
-                    { "Put Gum In Hair" },
-                    { "360 No Scope" },
-                    { "Turn Off and Back On" },
-                    { "Kill With Fire" },
-                };
-            case BoardPositon.C:
-                return new List<string>()
-                {
-                    { "Scratch Their Bieber CDs" },
-                    { "Press Alt + F4" },
-                    { "Wet Willy" },
-                    { "Don't Send Xmas Card" },
-                    { "Don't Touch Anything" },
-                    { "Fap Quietly to Food Network" },
-                    { "Run in Circles" },
-                    { "Kill with Kindness" },
-                    { "Tiger's Claw Grasps the Pearls" },
-                    { "Flail Wildly" },
-                };
-            case BoardPositon.B:
-                return new List<string>()
-                {
-                    { "Execute" },
-                    { "Eye Gouge" },
-                    { "Long Distance Expectoration" }, //Especially Good Expectoration
-                    { "Fake High Five" },
-                    { "Release the Kraken" },
-                    { "Sweep the Leg" },
-                    { "Camp Spawn" },
-                    { "420 Blaze 'Em" },
-                    { "Shit Self" },
-                    { "Spin to Win" },
-                };
-            case BoardPositon.A:
-                return new List<string>()
-                {
-                    { "Grab Pitchfork!" },
-                    { "Call Tech Support" },
-                    { "Fire da Lazzzoorrr!!!" },
-                    { "Smoke (If you got 'em)" },
-                    { "Cheat" },
-                    { "Rage Silently" },
-                    { "Kill the Messenger" },
-                    { "Spinning Neck Chop" },
-                    { "Farm Jungle" },
-                    { "Disenchant Legendary" },
-                };
-            default:
-                throw new System.Exception("Invalid board positon.");
-        }
+        return Party1CurrentButton;
     }
+
+    public GameButton GetCurrentParty2ActiveButton()
+    {
+        return Party2CurrentButton;
+    }
+    
+    public List<KeyCode> GetAllActiveKeys()
+    {
+        return AllActiveKeys;
+    }
+
+    public bool IsCurrentButtonParty1(KeyCode numberKey)
+    {
+        return (Party1CurrentButton != null
+            && Party1CurrentButton.NumberKey == numberKey);
+    }
+
+    public bool IsCurrentButtonParty2(KeyCode numberKey)
+    {
+        return (Party2CurrentButton != null
+            && Party2CurrentButton.NumberKey == numberKey);
+    }
+
+    public bool IsKeyParty1(KeyCode key)
+    {
+        return Party1Dictionary.ContainsKey(key);
+    }
+
+    public bool IsKeyParty2(KeyCode key)
+    {
+        return Party2Dictionary.ContainsKey(key);
+    }
+
+    #endregion
 }
 
 public class GameButtonGroup
@@ -592,4 +598,12 @@ public enum JoystickAssignment
     Joystick6,
     Joystick7,
     Joystick8
+}
+
+public enum BoardPositon
+{
+    A,
+    B,
+    C,
+    D
 }
