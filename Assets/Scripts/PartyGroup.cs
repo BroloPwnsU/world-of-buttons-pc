@@ -38,7 +38,7 @@ public class PartyGroup : MonoBehaviour
     private PVPSprite _pvp2;
 
     private System.Action TriggerDamageEffect;
-
+    
     #endregion
 
     #region Public Properties
@@ -228,6 +228,12 @@ public class PartyGroup : MonoBehaviour
     {
         _healthText.text = ((int)currentHP).ToString();
         _healthBar.SetCurrentHealth(currentHP, originalHP);
+    }
+
+    public void ShowVictoryDance()
+    {
+        _pvp1.Win();
+        _pvp2.Win();
     }
 
     public void MakeAttack(bool bCrit, System.Action triggerDamageEffect)
@@ -567,6 +573,20 @@ public class PartyGroup : MonoBehaviour
         else
         {
             PlayAttackSound(bCrit);
+        }
+
+        //Now show the damage animation
+        if (newCurrentHP <= 0)
+        {
+            //If they're dead, play the dead animation
+            _pvp1.Die();
+            _pvp2.Die();
+        }
+        else
+        {
+            //If they're still alive, just make them jiggle a little bit
+            _pvp1.TakeDamage();
+            _pvp2.TakeDamage();
         }
     }
 

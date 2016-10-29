@@ -23,4 +23,19 @@ public class PVPSprite : MonoBehaviour
         //animator.Play("bf_jump", 0);
         animator.SetTrigger("Land");
     }
+
+    public void TakeDamage()
+    {
+        animator.SetTrigger("Damage");
+    }
+
+    public void Win()
+    {
+        animator.SetTrigger("Win");
+    }
+
+    public void Die()
+    {
+        animator.SetTrigger("Die");
+    }
 }

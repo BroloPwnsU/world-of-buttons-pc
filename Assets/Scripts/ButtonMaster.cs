@@ -25,13 +25,13 @@ public class ButtonMaster
 
     //private Dictionary<KeyCode, KeyCode> NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
     
-    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick5;
-    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick4;
+    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick1;
+    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick2;
     private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick3;
-    private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick1;
+    private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick4;
 
-    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick6;
-    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick1;
+    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick5;
+    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick6;
     private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
     private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
 
@@ -266,7 +266,6 @@ public class ButtonMaster
             case JoystickAssignment.Joystick5:
                 return new List<KeyCode>()
                 {
-                        KeyCode.Keypad0,
                         KeyCode.Keypad1,
                         KeyCode.Keypad2,
                         KeyCode.Keypad3,
@@ -276,6 +275,7 @@ public class ButtonMaster
                         KeyCode.Keypad7,
                         KeyCode.Keypad8,
                         KeyCode.Keypad9,
+                        KeyCode.Keypad0,
                 };
             case JoystickAssignment.Joystick6:
                 return new List<KeyCode>()
@@ -328,7 +328,7 @@ public class ButtonMaster
     {
         switch (boardPositon)
         {
-            case BoardPositon.D:
+            case BoardPositon.A:
                 return new List<string>()
                 {
                     { "Play an Advertisement" },
@@ -343,7 +343,7 @@ public class ButtonMaster
                     { "Spinning Meat Cleaver" },
                     { "Splintering Mace Clout" },
                 };
-            case BoardPositon.C:
+            case BoardPositon.B:
                 return new List<string>()
                 {
                     { "Vicious Chest Poke" },
@@ -358,7 +358,7 @@ public class ButtonMaster
                     { "Tiger's Claw Grasps the Pearls" },
                     { "Viper's Fang Stabs the Kiwis" }
                 };
-            case BoardPositon.B:
+            case BoardPositon.C:
                 return new List<string>()
                 {
                     { "Long Distance Expectoration" }, //Especially Good Expectoration
@@ -373,7 +373,7 @@ public class ButtonMaster
                     { "Tank and Spank" },
                     { "Spin to Win" },
                 };
-            case BoardPositon.A:
+            case BoardPositon.D:
                 return new List<string>()
                 {
                     { "Blasphemous Belch" },
@@ -533,12 +533,14 @@ public class ButtonMaster
 
     public bool IsCurrentButtonParty1(KeyCode numberKey)
     {
+        Debug.Log("Current Party 2 button: " + Party1CurrentButton.NumberKey + " ... " + Party1CurrentButton.Name);
         return (Party1CurrentButton != null
             && Party1CurrentButton.NumberKey == numberKey);
     }
 
     public bool IsCurrentButtonParty2(KeyCode numberKey)
     {
+        Debug.Log("Current Party 2 button: " + Party2CurrentButton.NumberKey + " ... " + Party2CurrentButton.Name);
         return (Party2CurrentButton != null
             && Party2CurrentButton.NumberKey == numberKey);
     }

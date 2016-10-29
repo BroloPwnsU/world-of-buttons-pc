@@ -65,6 +65,8 @@ public class AttackPanel : GamePanel
         //_party2FailSprite = BossPanel.GetComponentInChildren<FailSprite>(true);
 
         _timerPanel = TimerPanel.GetComponent<TimerPanel>();
+
+        _resolutionPanel = GetComponentInChildren<ResolutionPanel>(true);
     }
 
     public void StartBattle(ButtonMaster buttonMaster, BattleSettings battleSettings)
@@ -217,18 +219,30 @@ public class AttackPanel : GamePanel
         StartAttackCycle(AttackMode.SuddenDeath);
     }
 
-    void EndBattle(BattleVictor victor)
+    void EndRound(BattleVictor victor)
     {
         //The battle is ended. Make sure everything user-related freezes.
         _battleRaging = false;
         _freezeTime = false;
+
+        if (victor == BattleVictor.Party1
+            || victor == BattleVictor.PVE)
+        {
+            _party1.ShowVictoryDance();
+        }
+        else
+        {
+            _party2.ShowVictoryDance();
+        }
+
 
         //How do we share the end of the battle with the parent object?
         RoundResult roundResult = new RoundResult()
         {
             Victor = victor
         };
-        EndRoundNotification(roundResult);
+        ShowRoundVictoryPanel(roundResult);
+        //The attack panel will reset after the victory panel.
     }
 
     void EndAttackCycle()
@@ -250,11 +264,11 @@ public class AttackPanel : GamePanel
             //Party 1 Died. Was it a boss fight?
             if (_battleSettings.BossFight)
             {
-                EndBattle(BattleVictor.Boss);
+                EndRound(BattleVictor.Boss);
             }
             else
             {
-                EndBattle(BattleVictor.Party2);
+                EndRound(BattleVictor.Party2);
             }
         }
         else if (_party2Health <= 0)
@@ -262,11 +276,11 @@ public class AttackPanel : GamePanel
             //Party 2 Died. Was it a boss fight?
             if (_battleSettings.BossFight)
             {
-                EndBattle(BattleVictor.PVE);
+                EndRound(BattleVictor.PVE);
             }
             else
             {
-                EndBattle(BattleVictor.Party1);
+                EndRound(BattleVictor.Party1);
             }
         }
         else
@@ -303,12 +317,17 @@ public class AttackPanel : GamePanel
 
         List<KeyCode> numberKeysPressed = new List<KeyCode>();
         //List<KeyCode> letterKeysPressed = new List<KeyCode>();
-        
+
+        string sGrabEmAll = "";
         foreach (KeyCode numberKey in _buttonMaster.GetAllActiveKeys())
         {
+            sGrabEmAll += numberKey + " - ";
+
             //Check all possible joystick number keys to look for multiple presses.
             if (Input.GetKeyDown(numberKey))
             {
+                Debug.Log("Key strike: " + numberKey);
+
                 //Someone pressed a joystick key!
                 numberKeysPressed.Add(numberKey);
             }
@@ -366,6 +385,7 @@ public class AttackPanel : GamePanel
 
             if (numberKeysPressed.Count >= 2)
             {
+                Debug.Log("Duplicate press");
                 #region Two buttons hit at the same time
 
                 //If it's a boss fight, then this is an automatic failure, since all players are on the same team.
@@ -458,7 +478,6 @@ public class AttackPanel : GamePanel
 
                 if (_battleSettings.BossFight)
                 {
-                    Debug.Log("something pressed?");
                     if (_buttonMaster.IsCurrentButtonParty1(numberKeysPressed[0]))
                     {
                         //Correct key pressed!
@@ -472,23 +491,27 @@ public class AttackPanel : GamePanel
                 else
                 {
                     KeyCode numberKey = numberKeysPressed[0];
-                    
+
+                    Debug.Log("Single press " + numberKey);
                     if (_buttonMaster.IsKeyParty1(numberKey))
                     {
                         //Pressed by party 1. Was it correct?
                         if (_buttonMaster.IsCurrentButtonParty1(numberKey))
                         {
                             //Success!
+                            Debug.Log("Single press succ 1 " + numberKey);
                             Party1InputSuccess();
                         }
                         else
                         {
                             //They pressed the wrong button
+                            Debug.Log("Single press fail 1 " + numberKey);
                             Party1InputFailByButtonPress();
                         }
                     }
                     else if (_buttonMaster.IsKeyParty2(numberKey))
                     {
+                        Debug.Log("Single press party 2 " + numberKey);
                         //Pressed by party 2. Was it correct?
                         if (_buttonMaster.IsCurrentButtonParty2(numberKey))
                         {
@@ -723,7 +746,9 @@ public class AttackPanel : GamePanel
     void UpdateButtonNameText()
     {
         //Always show player 1 button commands
-        ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
+
+        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
+        ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
     }
 
     IEnumerator UnthreadedDelay(float fSeconds, Action thingToExecute)
@@ -749,6 +774,35 @@ public class AttackPanel : GamePanel
             if (canvasGroup.alpha != 0.0f)
                 canvasGroup.alpha = 0.0f;
         }
+    }
+
+    #endregion
+
+
+    #region State - Round Victory
+
+    public float RoundVictoryTimeSeconds = 2;
+    private RoundResult _roundResult = null;
+    private ResolutionPanel _resolutionPanel;
+
+    void ShowRoundVictoryPanel(RoundResult roundResult)
+    {
+        _roundResult = roundResult;
+
+        Debug.Log(RoundVictoryTimeSeconds);
+        _resolutionPanel.SetVictor(roundResult);
+        _resolutionPanel.Show();
+        StartCoroutine(UnthreadedDelay(
+            RoundVictoryTimeSeconds,
+            EndRoundVictoryScreen
+            ));
+    }
+
+
+    void EndRoundVictoryScreen()
+    {
+        _resolutionPanel.Hide();
+        EndRoundNotification(_roundResult);
     }
 
     #endregion

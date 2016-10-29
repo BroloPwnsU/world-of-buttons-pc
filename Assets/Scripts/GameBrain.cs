@@ -179,16 +179,7 @@ public class GameBrain : MonoBehaviour
         else if (_gameState == GameState.RoundVictoryScreen)
         {
             #region Prep - Intro animation/instructions. Can't skip.
-
-            // Only attendant can reset the game from here.
-            //We will wait for the time period to end.
-            _timeLeft -= Time.deltaTime;
-            if (_timeLeft < 0)
-            {
-                //After the time expires, switch to a player cycle.
-                EndRoundVictoryScreen();
-            }
-
+            
             #endregion
         }
         else if (_gameState == GameState.OutcomeScreen)
@@ -634,8 +625,7 @@ public class GameBrain : MonoBehaviour
         else
         {
             //Nobody won yet. Need to fight another round.
-            //But first, show who won this round.
-            StartRoundVictoryScreen(roundResult);
+            StartGetReadyScreen();
         }
     }
 
@@ -652,39 +642,6 @@ public class GameBrain : MonoBehaviour
                 gamePanel.Hide();
             }
         }
-    }
-
-    #endregion
-
-    #region State - Round Victory
-    
-    void StartRoundVictoryScreen(RoundResult roundResult)
-    {
-        _gameState = GameState.RoundVictoryScreen;
-        RenderRoundVictoryScreen(roundResult);
-
-        _timeLeft = RoundVictoryScreenSeconds;
-    }
-
-    void RenderRoundVictoryScreen(RoundResult roundResult)
-    {
-        foreach (GamePanel gamePanel in _gamePanels)
-        {
-            if (gamePanel is ResolutionPanel)
-            {
-                gamePanel.Show();
-                ((ResolutionPanel)gamePanel).SetVictor(roundResult);
-            }
-            else
-            {
-                gamePanel.Hide();
-            }
-        }
-    }
-
-    void EndRoundVictoryScreen()
-    {
-        StartGetReadyScreen();
     }
 
     #endregion
