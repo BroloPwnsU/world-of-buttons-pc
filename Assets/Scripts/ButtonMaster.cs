@@ -67,7 +67,6 @@ public class ButtonMaster
         }
         else
         {
-            Debug.Log(_bFullSpread);
             //PVP
             //Player 1 and 2 on party 1
             Party1ActiveButtons.AddRange(GetParty1Buttons(_bFullSpread));

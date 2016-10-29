@@ -608,7 +608,7 @@ public class GameBrain : MonoBehaviour
         // Then, depending on the number of current victories, either show a TRIUMPH! screen of some sort,
         // or trigger a new combat sequence.
         BattlePanel.SetActive(false);
-        Debug.Log("Party 1: " + _party1VictoryCount + ", Party 2: " + _party2VictoryCount + ", VNTW: " + _victoriesNeededToWin);
+
         if (_party1VictoryCount >= _victoriesNeededToWin)
         {
             if (_bossFight)

@@ -250,12 +250,10 @@ public class AttackPanel : GamePanel
             //Party 1 Died. Was it a boss fight?
             if (_battleSettings.BossFight)
             {
-                Debug.Log("Battle Over. Boss won!");
                 EndBattle(BattleVictor.Boss);
             }
             else
             {
-                Debug.Log("Battle Over. Party 2 won!");
                 EndBattle(BattleVictor.Party2);
             }
         }
@@ -264,12 +262,10 @@ public class AttackPanel : GamePanel
             //Party 2 Died. Was it a boss fight?
             if (_battleSettings.BossFight)
             {
-                Debug.Log("Battle Over. Humans won!");
                 EndBattle(BattleVictor.PVE);
             }
             else
             {
-                Debug.Log("Battle Over. Party 1 won!");
                 EndBattle(BattleVictor.Party1);
             }
         }

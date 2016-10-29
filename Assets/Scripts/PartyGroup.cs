@@ -33,6 +33,10 @@ public class PartyGroup : MonoBehaviour
     private Vector3 _PVE3StartPosition;
     private Vector3 _PVE4StartPosition;
 
+    private PVPSprite _activeSpriteScript;
+    private PVPSprite _pvp1;
+    private PVPSprite _pvp2;
+
     private System.Action TriggerDamageEffect;
 
     #endregion
@@ -84,7 +88,24 @@ public class PartyGroup : MonoBehaviour
                 }
             }
         }
+        
+        PVPSprite[] pvpSprites = gameObject.GetComponentsInChildren<PVPSprite>(true);
+        if (pvpSprites != null)
+        {
+            foreach (PVPSprite x in pvpSprites)
+            {
+                if (x.gameObject.name == "PVP1")
+                {
+                    _pvp1 = x;
+                }
+                else if (x.gameObject.name == "PVP2")
+                {
+                    _pvp2 = x;
+                }
+            }
+        }
 
+        _activeSpriteScript = null;
         _currentJumpState = PlayerSpriteJumpState.None;
         SetJumpStartPositions();
         _characterSpriteEndPosition = new Vector3(ButtonX, ButtonY, 1);
@@ -227,22 +248,24 @@ public class PartyGroup : MonoBehaviour
         //4b. The player sprite transitions from jump animation to idle animation.
 
         PlayerSprite player;
+        PVPSprite spriteScript;
         
         if (UnityEngine.Random.Range(0,2) == 1)
         {
             player = PlayerSprite.PVP1;
+            spriteScript = _pvp1;
         }
         else
         {
             player = PlayerSprite.PVP2;
+            spriteScript = _pvp2;
         }
 
-
         _activePlayerSprite = player;
+        _activeSpriteScript = spriteScript;
         _activePlayerSpriteTransform = GetPlayerSpriteTransform(player);
 
         StartAttackJumpTranslation(player);
-        StartJumpAnimation(player);
         PlayJumpNoise();
     }
     
@@ -379,10 +402,11 @@ public class PartyGroup : MonoBehaviour
 
     void StartAttackJumpTranslation(PlayerSprite player)
     {
+        StartJumpAnimation(_activeSpriteScript);
+
         Transform playerSpriteTransform = GetPlayerSpriteTransform(player);
         if (playerSpriteTransform != null)
         {
-            Debug.Log("Hi");
             _activePlayerSpriteStartPosition = GetStartPosition(player);
             _currentJumpState = PlayerSpriteJumpState.Attacking;
             _timeElapsed = 0;
@@ -393,6 +417,8 @@ public class PartyGroup : MonoBehaviour
     {
         _currentJumpState = PlayerSpriteJumpState.Retreating;
         _timeElapsed = 0;
+
+        //StartJumpAnimation(_activeSpriteScript);
     }
 
     void StartPressingTranslation()
@@ -400,6 +426,7 @@ public class PartyGroup : MonoBehaviour
         _timeElapsed = 0;
         _currentJumpState = PlayerSpriteJumpState.Pressing;
 
+        //EndJumpAnimation(_activeSpriteScript);
         TriggerDamageEffect();
     }
 
@@ -407,6 +434,8 @@ public class PartyGroup : MonoBehaviour
     {
         _timeElapsed = 0;
         _currentJumpState = PlayerSpriteJumpState.None;
+
+        EndJumpAnimation(_activeSpriteScript);
     }
 
     #endregion
@@ -465,9 +494,15 @@ public class PartyGroup : MonoBehaviour
 
     #region Sprite Animations
 
-    void StartJumpAnimation(PlayerSprite player)
+    void StartJumpAnimation( PVPSprite spriteScript)
     {
         //Doesn't do shit. Need to add this once we have created a jump animation clip.
+        spriteScript.Jump();
+    }
+
+    void EndJumpAnimation(PVPSprite spriteScript)
+    {
+        spriteScript.Land();
     }
 
     #endregion
