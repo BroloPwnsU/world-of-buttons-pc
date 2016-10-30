@@ -30,7 +30,7 @@ public class GameBrain : MonoBehaviour
     private float _bossStartHealth;
 
     private List<GamePanel> _gamePanels = new List<GamePanel>();
-
+    
     #endregion
 
     #region Public Properties

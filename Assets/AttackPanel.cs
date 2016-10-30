@@ -24,6 +24,11 @@ public class AttackPanel : GamePanel
     public GameObject TimerPanel;
     public GameObject PanicModePanel;
 
+    public AudioClip[] RoundVictorySounds;
+    public float RoundVictoryVolume = 1.0f;
+
+    public float RoundVictoryTimeSeconds = 2;
+
     //private bool AutoInputDualActionMode = true;
 
     private ButtonMaster _buttonMaster;
@@ -45,6 +50,9 @@ public class AttackPanel : GamePanel
 
     private ButtonNamePanel _buttonNamePanel;
 
+    private RoundResult _roundResult = null;
+    private ResolutionPanel _resolutionPanel;
+
     //private SuccessSprite _party1SuccessSprite;
     //private SuccessSprite _party2SuccessSprite;
     //private FailSprite _party1FailSprite;
@@ -54,6 +62,8 @@ public class AttackPanel : GamePanel
     private bool _freezeTime = false;
     //private BattleMode _battleMode = BattleMode.Timed;
     private Action<RoundResult> EndRoundNotification;
+
+    private AudioSource _audioSource;
 
     void Awake()
     {
@@ -72,6 +82,8 @@ public class AttackPanel : GamePanel
         _resolutionPanel = GetComponentInChildren<ResolutionPanel>(true);
         _theBigButton = GetComponentInChildren<TheBigButton>(true);
         _buttonNamePanel = GetComponentInChildren<ButtonNamePanel>(true);
+
+        _audioSource = GetComponent<AudioSource>();
     }
 
     public void StartBattle(ButtonMaster buttonMaster, BattleSettings battleSettings)
@@ -762,7 +774,7 @@ public class AttackPanel : GamePanel
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
         _buttonNamePanel.Show();
         _buttonNamePanel.SetText(
-            _buttonMaster.GetCurrentParty1ActiveButton().Name
+            _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString()
             );
     }
 
@@ -792,20 +804,16 @@ public class AttackPanel : GamePanel
     }
 
     #endregion
-
-
+    
     #region State - Round Victory
-
-    public float RoundVictoryTimeSeconds = 2;
-    private RoundResult _roundResult = null;
-    private ResolutionPanel _resolutionPanel;
 
     void ShowRoundVictoryPanel(RoundResult roundResult)
     {
         _roundResult = roundResult;
         _buttonNamePanel.Hide();
 
-        Debug.Log(RoundVictoryTimeSeconds);
+        PlayVictorySound();
+
         _resolutionPanel.SetVictor(roundResult);
         _resolutionPanel.Show();
         StartCoroutine(UnthreadedDelay(
@@ -814,11 +822,25 @@ public class AttackPanel : GamePanel
             ));
     }
 
-
     void EndRoundVictoryScreen()
     {
         _resolutionPanel.Hide();
         EndRoundNotification(_roundResult);
+    }
+
+    #endregion
+
+    #region Noises
+
+    void PlayVictorySound()
+    {
+        if (RoundVictorySounds != null && RoundVictorySounds.Length > 0)
+        {
+            _audioSource.PlayOneShot(
+            RoundVictorySounds[UnityEngine.Random.Range(0, RoundVictorySounds.Length - 1)],
+            RoundVictoryVolume
+            );
+        }
     }
 
     #endregion
