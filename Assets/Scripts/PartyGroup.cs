@@ -37,8 +37,9 @@ public class PartyGroup : MonoBehaviour
     private PVPSprite _pvp1;
     private PVPSprite _pvp2;
 
+    private System.Action SendPressNotification;
     private System.Action TriggerDamageEffect;
-    
+
     #endregion
 
     #region Public Properties
@@ -64,6 +65,7 @@ public class PartyGroup : MonoBehaviour
     public float ButtonX = 0;
     public float ButtonY = 0;
     public float ButtonZ = 0;
+    public float JumpYMultiplier = 1.0f;
 
     #endregion
 
@@ -236,9 +238,10 @@ public class PartyGroup : MonoBehaviour
         _pvp2.Win();
     }
 
-    public void MakeAttack(bool bCrit, System.Action triggerDamageEffect)
+    public void MakeAttack(bool bCrit, System.Action triggerDamageEffect, System.Action sendPressNotification)
     {
         TriggerDamageEffect = triggerDamageEffect;
+        SendPressNotification = sendPressNotification;
 
         //Attack consists of:
         //1a. One player jumps, translating in an arc towards a button in the center of the screen over the course of 0.5s
@@ -434,6 +437,7 @@ public class PartyGroup : MonoBehaviour
 
         //EndJumpAnimation(_activeSpriteScript);
         TriggerDamageEffect();
+        SendPressNotification();
     }
 
     void StopJumpTranslation()
@@ -442,6 +446,7 @@ public class PartyGroup : MonoBehaviour
         _currentJumpState = PlayerSpriteJumpState.None;
 
         EndJumpAnimation(_activeSpriteScript);
+        SendPressNotification();
     }
 
     #endregion
@@ -491,7 +496,7 @@ public class PartyGroup : MonoBehaviour
 
             //Y bonus parabola
             float ybonus = 1 - ((4 / (jumpDuration * jumpDuration)) * Mathf.Pow((timeElapsed - (jumpDuration / 2)), 2));
-            ybonus *= 3;
+            ybonus *= JumpYMultiplier;
             return new Vector3(x, y + ybonus, z);
         }
     }
@@ -554,7 +559,7 @@ public class PartyGroup : MonoBehaviour
                 );
         }
     }
-
+    
     public void TakeDamage(float damage, float newCurrentHP, float originalHP, bool bCrit, bool bSelfAttack)
     {
         _healthBar.TakeDamage(damage, false, newCurrentHP, originalHP);

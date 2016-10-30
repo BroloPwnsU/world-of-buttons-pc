@@ -7,6 +7,7 @@ using System.Collections.Generic;
 public class AttackPanel : GamePanel
 {
     public bool UseTimer;
+    public float TimeBetweenAttackCycles;
 
     public GameObject Party1Success;
     public GameObject Party2Success;
@@ -31,6 +32,7 @@ public class AttackPanel : GamePanel
     private PartyGroup _party1;
     private PartyGroup _party2;
     private TimerPanel _timerPanel;
+    private TheBigButton _theBigButton;
 
     private float _party1Health;
     private float _party2Health;
@@ -41,7 +43,8 @@ public class AttackPanel : GamePanel
     private float _timeLeft;
     private float _currentTimeLeftSeconds;
 
-    public Text ButtonNameText;
+    private ButtonNamePanel _buttonNamePanel;
+
     //private SuccessSprite _party1SuccessSprite;
     //private SuccessSprite _party2SuccessSprite;
     //private FailSprite _party1FailSprite;
@@ -67,6 +70,8 @@ public class AttackPanel : GamePanel
         _timerPanel = TimerPanel.GetComponent<TimerPanel>();
 
         _resolutionPanel = GetComponentInChildren<ResolutionPanel>(true);
+        _theBigButton = GetComponentInChildren<TheBigButton>(true);
+        _buttonNamePanel = GetComponentInChildren<ButtonNamePanel>(true);
     }
 
     public void StartBattle(ButtonMaster buttonMaster, BattleSettings battleSettings)
@@ -248,7 +253,7 @@ public class AttackPanel : GamePanel
     void EndAttackCycle()
     {
         _freezeTime = true;
-        StartCoroutine(UnthreadedDelay(1.1f, EvaluateAttackOutcome));
+        StartCoroutine(UnthreadedDelay(TimeBetweenAttackCycles, EvaluateAttackOutcome));
     }
 
     void EvaluateAttackOutcome()
@@ -651,6 +656,12 @@ public class AttackPanel : GamePanel
             );
     }
 
+    void PressButtonNotification()
+    {
+        //At the end of the jump movement we want the button to depress.
+        _theBigButton.PressMeBaby();
+    }
+
     private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroup partyAttack, PartyGroup partyDefend, bool bSelfDamage)
     {
         //Get a random damage value from within the specific player attack range
@@ -692,7 +703,7 @@ public class AttackPanel : GamePanel
                     bCrit,
                     bSelfDamage
                     );
-            });
+            }, PressButtonNotification);
         }
         else
         {
@@ -748,7 +759,11 @@ public class AttackPanel : GamePanel
         //Always show player 1 button commands
 
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
-        ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
+        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
+        _buttonNamePanel.Show();
+        _buttonNamePanel.SetText(
+            _buttonMaster.GetCurrentParty1ActiveButton().Name
+            );
     }
 
     IEnumerator UnthreadedDelay(float fSeconds, Action thingToExecute)
@@ -788,6 +803,7 @@ public class AttackPanel : GamePanel
     void ShowRoundVictoryPanel(RoundResult roundResult)
     {
         _roundResult = roundResult;
+        _buttonNamePanel.Hide();
 
         Debug.Log(RoundVictoryTimeSeconds);
         _resolutionPanel.SetVictor(roundResult);

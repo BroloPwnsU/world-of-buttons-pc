@@ -67,23 +67,23 @@ public class ResolutionPanel : GamePanel
             float randy = Random.Range(0, 5);
             if (randy < 1)
             {
-                sText = "Team 1 told me a secret: they think Team 2 sucks. And they are right.";
+                sText = "Blue Team told me a secret: they think Green Team sucks. And they are right.";
             }
             else if (randy < 2)
             {
-                sText = "Team 2 is handsome, pretty, smart, and fun. But they suck at this game.";
+                sText = "Green Team is handsome, pretty, and smart. But they suck at this game.";
             }
             else if (randy < 3)
             {
-                sText = "Team 1 is the best! Let's have another round, shall we?";
+                sText = "Blue Team is the best! Let's have another round, shall we?";
             }
             else if (randy < 4)
             {
-                sText = "Team 1 says 'GG!' Just kidding, they say '2EZ NOOB!'";
+                sText = "Green Team is noobz. GG EZ.";
             }
             else
             {
-                sText = "Team 1 wins. Cool beans.";
+                sText = "Blue Team wins. Cool beans.";
             }
         }
         else if(roundResult.Victor == BattleVictor.Party2)
@@ -91,23 +91,23 @@ public class ResolutionPanel : GamePanel
             float randy = Random.Range(0, 5);
             if (randy < 1)
             {
-                sText = "Team 2 is so cool. Gosh, I wish I was that cool.";
+                sText = "Green Team is so cool. Gosh, I wish I was that cool.";
             }
             else if (randy < 2)
             {
-                sText = "Team 1 is a bunch of failures. Get better, scrubs.";
+                sText = "Blue Team is a bunch of failures. Get better, scrubs.";
             }
             else if (randy < 3)
             {
-                sText = "Team 2 is wearing the Number 1 Headband. Take it back, Team 1!";
+                sText = "Green Team whooped up on Blue Team.";
             }
             else if (randy < 4)
             {
-                sText = "Team 2's power level is over 9000!!!!!!!!!!!!!";
+                sText = "Green Team's power level is over 9000!!!!!!!";
             }
             else
             {
-                sText = "Grats Team 2. Scintillating stuff. /slowclap";
+                sText = "Grats Green Team. Scintillating stuff. /slowclap";
             }
         }
 

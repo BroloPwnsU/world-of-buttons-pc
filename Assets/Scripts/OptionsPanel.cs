@@ -79,7 +79,8 @@ public class OptionsPanel : GamePanel {
             {
                 //Set the position and scale of the newly spawned menu items.
 
-                thisPosition.y = -1.0f * i;
+                thisPosition.y = (-1f * i) + 0.5f;
+                thisPosition.z = 10;
 
                 GameObject menuSelectorClone = (GameObject)Instantiate(
                     _menuSelectorPrefab,

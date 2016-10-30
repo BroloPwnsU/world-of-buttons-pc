@@ -104,7 +104,6 @@ public class GameBrain : MonoBehaviour
         {
             if (gamePanel is GamePanel)
             {
-                Debug.Log("Panel: " + gamePanel.name);
                 _gamePanels.Add((GamePanel)gamePanel);
             }
         }
@@ -321,6 +320,7 @@ public class GameBrain : MonoBehaviour
     {
         List<OptionMenu> bmList = new List<OptionMenu>();
 
+        /*
         List<string> modeValues = new List<string>()
         {
             OPTION_MENU_MODE_VALUE_PVP,
@@ -333,6 +333,7 @@ public class GameBrain : MonoBehaviour
             );
 
         bmList.Add(bmMode);
+        */
 
         List<string> roundValues = new List<string>()
         {
@@ -361,6 +362,7 @@ public class GameBrain : MonoBehaviour
 
         bmList.Add(omRounds);
 
+        /*
         List<string> critValues = new List<string>()
         {
             "0%",
@@ -377,6 +379,7 @@ public class GameBrain : MonoBehaviour
             );
 
         bmList.Add(omCrit);
+        */
 
         OptionPanelSettings ops = new OptionPanelSettings(bmList);
 
@@ -401,13 +404,17 @@ public class GameBrain : MonoBehaviour
             Debug.Log("Option: " + sKey + " - " + selectedOptions[sKey]);
         }
 
-        if (selectedOptions[OPTION_MENU_MODE] == OPTION_MENU_MODE_VALUE_BOSS)
+        _bossFight = false;
+        if (selectedOptions.ContainsKey(OPTION_MENU_MODE))
         {
-            _bossFight = true;
-        }
-        else
-        {
-            _bossFight = false;
+            if (selectedOptions[OPTION_MENU_MODE] == OPTION_MENU_MODE_VALUE_BOSS)
+            {
+                _bossFight = true;
+            }
+            else
+            {
+                _bossFight = false;
+            }
         }
 
         //Determine victories needed
@@ -432,12 +439,15 @@ public class GameBrain : MonoBehaviour
         }
 
         //Determine crit chance, if any
-        string sCritChance = selectedOptions[OPTION_MENU_CRIT_CHANCE];
         float dCritChance = 0;
-        if (!String.IsNullOrEmpty(sCritChance))
+        if (selectedOptions.ContainsKey(OPTION_MENU_CRIT_CHANCE))
         {
-            sCritChance = sCritChance.Remove(sCritChance.Length - 1, 1);
-            dCritChance = float.Parse(sCritChance) * .01f;
+            string sCritChance = selectedOptions[OPTION_MENU_CRIT_CHANCE];
+            if (!String.IsNullOrEmpty(sCritChance))
+            {
+                sCritChance = sCritChance.Remove(sCritChance.Length - 1, 1);
+                dCritChance = float.Parse(sCritChance) * .01f;
+            }
         }
 
         if (_bossFight)
@@ -543,8 +553,7 @@ public class GameBrain : MonoBehaviour
     }
 
     #endregion
-
-
+    
     #region State - Attack
 
     void StartAttack()
