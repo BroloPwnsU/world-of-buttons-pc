@@ -4,6 +4,9 @@ using System.Collections;
 public class Projectile : MonoBehaviour
 {
     public Sprite[] Sprites;
+    public float RotationEulerAngle = 20;
+    public float FallVectorDistance = 0.8f;
+
     private SpriteRenderer _spriteRenderer;
     private Vector3 _originPosition;
     private Vector3 _targetPosition;
@@ -22,63 +25,84 @@ public class Projectile : MonoBehaviour
     private int _maxBounces = 0;
     private int _bounces = 0;
 
+    private float _totalLifetime = 0;
+
 	// Use this for initialization
 	void Awake ()
     {
         _spriteRenderer = GetComponent<SpriteRenderer>();
         _flying = false;
-        _fallVector = new Vector3(1.0f, 1.0f, 0.0f);
-	}
-	
-	// Update is called once per frame
-	void Update ()
+        _fallVector = new Vector3(FallVectorDistance, FallVectorDistance, 0.0f);
+    }
+
+    public void Destroy()
+    {
+        Debug.Log("Destorying");
+
+        if (gameObject != null)
+            Destroy(gameObject);
+    }
+
+    // Update is called once per frame
+    void Update ()
     {
 	    //fuck bitches get money, gee
+        _timeElapsed += Time.deltaTime;
+
+        _totalLifetime += Time.deltaTime;
+        if (_totalLifetime > 10)
+            this.Destroy();
+
+
         if (_flying)
         {
-            _timeElapsed += Time.deltaTime;
-            if (_flying)
+            UpdateFlight();
+            if (_timeElapsed >= _flightTime)
             {
-                UpdateFlight();
-                if (_timeElapsed >= _flightTime)
-                {
-                    //The dude has impacted.
-                    Fall();
-                }
+                //The dude has impacted.
+                Fall();
             }
-            else if (_falling)
+        }
+        else if (_falling)
+        {
+            UpdateFall();
+            if (_timeElapsed >= _fallTime)
             {
-                UpdateFall();
-                if (_timeElapsed >= _fallTime)
-                {
-                    //The dude has impacted.
-                    Bounce();
-                }
+                //The dude has impacted.
+                Bounce();
             }
-            else if (_bouncing)
+        }
+        else if (_bouncing)
+        {
+            UpdateBounce();
+            if (_timeElapsed >= _bounceTime)
             {
-                UpdateBounce();
-                if (_timeElapsed >= _bounceTime)
-                {
-                    //The dude has impacted.
-                    Die();
-                }
+                //The dude has impacted.
+                Die();
             }
-            else if (_dead)
+        }
+        else if (_dead)
+        {
+            //When it's dead it doesn't move. But it fades...
+            UpdateDead();
+            if (_timeElapsed >= _deadTime)
             {
-                //When it's dead it doesn't move. But it fades...
-                UpdateDead();
-                if (_timeElapsed >= _deadTime)
-                {
-                    //The dude has impacted.
-                    Destroy(this.gameObject);
-                }
+                //The dude has impacted.
+                Destroy(this.gameObject);
             }
         }
 	}
 
     public void Fly(Vector3 originPosition, Vector3 targetPosition, System.Action onHit)
     {
+        //First pick a random sprite to use
+        if (Sprites != null && Sprites.Length > 0)
+        {
+            int wRandomSpriteIndex = UnityEngine.Random.Range(0, Sprites.Length);
+            _spriteRenderer.sprite = Sprites[wRandomSpriteIndex];
+        }
+
+
         //Going to shoot this bitch down from the source location towards the evil bastard who deserves to die.
         //Need to know who to shoot at, and what his global position is.
         OnHit = onHit;
@@ -101,6 +125,11 @@ public class Projectile : MonoBehaviour
             _originPosition,
             _targetPosition
             );
+
+        transform.Rotate(new Vector3(0, 0, RotationEulerAngle));
+
+        Debug.Log("Position: " + transform.position.x + ", " + transform.position.y + ", " + transform.position.z);
+        Debug.Log("Local Position: " + transform.localPosition.x + ", " + transform.localPosition.y + ", " + transform.localPosition.z);
     }
 
     Vector3 GetFlyPositon(float timeElapsed, float flightTime, Vector3 startPoint, Vector3 endPoint)
@@ -126,7 +155,7 @@ public class Projectile : MonoBehaviour
         if (_targetPosition.x - _originPosition.x > 0)
             xMultiplier *= -1;
 
-        float yMultiplier = UnityEngine.Random.Range(0.8f, 1.2f);
+        float yMultiplier = -1 * UnityEngine.Random.Range(0.8f, 1.2f);
 
         _fallPosition = _targetPosition + new Vector3(_fallVector.x * xMultiplier, _fallVector.y * yMultiplier, _fallVector.z);
     }
@@ -142,6 +171,8 @@ public class Projectile : MonoBehaviour
             _targetPosition,
             _fallPosition
             );
+
+        transform.Rotate(new Vector3(0, 0, RotationEulerAngle));
     }
 
     Vector3 GetFallPositon(float timeElapsed, float flightTime, Vector3 startPoint, Vector3 endPoint)

@@ -9,6 +9,11 @@ public class AttackPanel : GamePanel
     public bool UseTimer;
     public float TimeBetweenAttackCycles;
 
+    public string GetReadyMessage = "Get ready...";
+    public string TimeFailMessage = "Oops! Time's up!";
+    public string ButtonFailMessage = "Oops! Wrong button!";
+    public string TieFailMessage = "Oops! Tie goes to nobody!";
+
     public GameObject Party1Success;
     public GameObject Party2Success;
     public GameObject Party1FailPanel;
@@ -562,6 +567,8 @@ public class AttackPanel : GamePanel
 
     void FailByTimeElapsed()
     {
+        SetFailText(TimeFailMessage);
+
         if (_battleSettings.BossFight)
         {
             //If it's a boss fight, only punish team one... because they are the only team!
@@ -580,12 +587,15 @@ public class AttackPanel : GamePanel
 
     void Party1InputFailByButtonPress()
     {
+        SetFailText(ButtonFailMessage);
         ApplyDamageToParty1(true);
         ShowParty1Fail();
     }
 
     void Party1InputFailByTie()
     {
+        SetFailText(ButtonFailMessage);
+
         //TODO: Support for TIE screen.
         ApplyDamageToParty1(true);
         ShowParty1Fail();
@@ -593,12 +603,14 @@ public class AttackPanel : GamePanel
 
     void Party2InputFailByButtonPress()
     {
+        SetFailText(ButtonFailMessage);
         ApplyDamageToParty2(true);
         ShowParty2Fail();
     }
 
     void Party2InputFailByTie()
     {
+        SetFailText(ButtonFailMessage);
         ApplyDamageToParty2(true);
         ShowParty2Fail();
     }
@@ -606,6 +618,7 @@ public class AttackPanel : GamePanel
     //If both players pressed at the same time... wow! It's a tie! Do something?
     void BothPartyInputTie()
     {
+        SetFailText(TieFailMessage);
         //TODO: What do we do?
         //Fuck it, for now assume party 1 wins
         ShowParty1Fail();
@@ -678,7 +691,7 @@ public class AttackPanel : GamePanel
         //Upon pressing the button, a weapon should shoot down from the sky.
         _attackStats.partyDefend.ChooseNewVictim();
         _cannon.Fire(
-            _attackStats.partyDefend.GetVictimPosition(),
+            _attackStats.partyDefend.GetVictimHeadPosition(),
             ProjectileHitNotification
             );
     }
@@ -800,6 +813,27 @@ public class AttackPanel : GamePanel
             _timerPanel.SetTime(_timeLeft, _currentTimeLeftSeconds);
         }
     }
+
+    void SetGetReadyText()
+    {
+        //Always show player 1 button commands
+
+        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
+        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
+        _buttonNamePanel.Show();
+        _buttonNamePanel.SetText(GetReadyMessage);
+    }
+
+    void SetFailText(string sText)
+    {
+        //Always show player 1 button commands
+
+        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
+        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
+        _buttonNamePanel.Show();
+        _buttonNamePanel.SetText(sText);
+    }
+
 
     void UpdateButtonNameText()
     {

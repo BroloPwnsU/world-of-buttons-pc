@@ -18,7 +18,7 @@ public class PartyGroup : MonoBehaviour
 
     private float _timeElapsed = 0;
     private float _jumpDuration = 0.5f;
-    private float _pressDuration = 0.1f;
+    private float _pressDuration = 0.01f;
     private Vector3 _characterSpriteEndPosition;
 
     private PlayerSpriteJumpState _currentJumpState;
@@ -443,7 +443,7 @@ public class PartyGroup : MonoBehaviour
         _currentJumpState = PlayerSpriteJumpState.None;
 
         EndJumpAnimation(_activeSpriteScript);
-        SendPressNotification();
+        //SendPressNotification();
     }
 
     #endregion
@@ -583,14 +583,28 @@ public class PartyGroup : MonoBehaviour
         }
     }
     
+    public Vector3 GetVictimHeadPosition()
+    {
+        if (_victim == PlayerSprite.PVP1)
+        {
+            return _PVP1StartPosition + new Vector3(0, 0.8f, 0);
+        }
+        else
+        {
+            return _PVP2StartPosition + new Vector3(0, 0.8f, 0);
+        }
+    }
+
     public void TakeDamage(float damage, float newCurrentHP, float originalHP, bool bCrit, bool bSelfAttack)
     {
         _healthBar.TakeDamage(damage, false, newCurrentHP, originalHP);
 
+        /*
         if (bCrit)
             _critSprite.Show();
         else
             _damageSprite.Show();
+        */
 
         _healthText.text = ((int)newCurrentHP).ToString();
 
