@@ -38,6 +38,7 @@ public class AttackPanel : GamePanel
     private PartyGroup _party2;
     private TimerPanel _timerPanel;
     private TheBigButton _theBigButton;
+    private ProjectileCannon _cannon;
 
     private float _party1Health;
     private float _party2Health;
@@ -82,6 +83,7 @@ public class AttackPanel : GamePanel
         _resolutionPanel = GetComponentInChildren<ResolutionPanel>(true);
         _theBigButton = GetComponentInChildren<TheBigButton>(true);
         _buttonNamePanel = GetComponentInChildren<ButtonNamePanel>(true);
+        _cannon = GetComponentInChildren<ProjectileCannon>(true);
 
         _audioSource = GetComponent<AudioSource>();
     }
@@ -672,7 +674,27 @@ public class AttackPanel : GamePanel
     {
         //At the end of the jump movement we want the button to depress.
         _theBigButton.PressMeBaby();
+
+        //Upon pressing the button, a weapon should shoot down from the sky.
+        _attackStats.partyDefend.ChooseNewVictim();
+        _cannon.Fire(
+            _attackStats.partyDefend.GetVictimPosition(),
+            ProjectileHitNotification
+            );
     }
+
+    void ProjectileHitNotification()
+    {
+        _attackStats.partyDefend.TakeDamage(
+            _attackStats.damage,
+            _attackStats.newHealth,
+            _attackStats.startHealth,
+            _attackStats.bCrit,
+            _attackStats.bSelfDamage
+            );
+    }
+
+    private AttackStats _attackStats;
 
     private float ApplyDamage(float currentHealth, float startHealth, float minimumDamage, float maximumDamage, float critPercent, PartyGroup partyAttack, PartyGroup partyDefend, bool bSelfDamage)
     {
@@ -703,10 +725,23 @@ public class AttackPanel : GamePanel
             newHealth -= damage;
         }
 
+        _attackStats = new AttackStats()
+        {
+            currentHealth = currentHealth,
+            damage = damage,
+            newHealth = newHealth,
+            startHealth = startHealth,
+            bCrit = bCrit,
+            bSelfDamage = bSelfDamage,
+            partyAttack = partyAttack,
+            partyDefend = partyDefend
+        };
+
         if (!bSelfDamage)
         {
             //Do a big fancy attack animation
-            partyAttack.MakeAttack(bCrit, () =>
+            partyAttack.MakeAttack(_attackStats, PressButtonNotification);
+            /*partyAttack.MakeAttack(bCrit, () =>
             {
                 partyDefend.TakeDamage(
                     damage,
@@ -715,7 +750,7 @@ public class AttackPanel : GamePanel
                     bCrit,
                     bSelfDamage
                     );
-            }, PressButtonNotification);
+            }, PressButtonNotification);*/
         }
         else
         {
@@ -878,4 +913,18 @@ public enum BattleMode
 {
     Timed,
     Panic
+}
+public struct AttackStats
+{
+    public float currentHealth;
+    public float startHealth;
+    public float minimumDamage;
+    public float maximumDamage;
+    public float damage;
+    public float critPercent;
+    public bool bCrit;
+    public float newHealth;
+    public PartyGroup partyAttack;
+    public PartyGroup partyDefend;
+    public bool bSelfDamage;
 }

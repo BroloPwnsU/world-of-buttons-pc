@@ -38,7 +38,6 @@ public class PartyGroup : MonoBehaviour
     private PVPSprite _pvp2;
 
     private System.Action SendPressNotification;
-    private System.Action TriggerDamageEffect;
 
     #endregion
 
@@ -238,9 +237,8 @@ public class PartyGroup : MonoBehaviour
         _pvp2.Win();
     }
 
-    public void MakeAttack(bool bCrit, System.Action triggerDamageEffect, System.Action sendPressNotification)
+    public void MakeAttack(AttackStats attackStats, System.Action sendPressNotification)
     {
-        TriggerDamageEffect = triggerDamageEffect;
         SendPressNotification = sendPressNotification;
 
         //Attack consists of:
@@ -436,7 +434,6 @@ public class PartyGroup : MonoBehaviour
         _currentJumpState = PlayerSpriteJumpState.Pressing;
 
         //EndJumpAnimation(_activeSpriteScript);
-        TriggerDamageEffect();
         SendPressNotification();
     }
 
@@ -559,6 +556,32 @@ public class PartyGroup : MonoBehaviour
                 );
         }
     }
+
+    private PlayerSprite _victim = PlayerSprite.PVP1;
+
+    public void ChooseNewVictim()
+    {
+        if (UnityEngine.Random.Range(0, 2) == 1)
+        {
+            _victim = PlayerSprite.PVP1;
+        }
+        else
+        {
+            _victim = PlayerSprite.PVP2;
+        }
+    }
+
+    public Vector3 GetVictimPosition()
+    {
+        if (_victim == PlayerSprite.PVP1)
+        {
+            return _PVP1StartPosition;
+        }
+        else
+        {
+            return _PVP2StartPosition;
+        }
+    }
     
     public void TakeDamage(float damage, float newCurrentHP, float originalHP, bool bCrit, bool bSelfAttack)
     {
@@ -589,9 +612,16 @@ public class PartyGroup : MonoBehaviour
         }
         else
         {
+            if (bSelfAttack)
+            {
+                _pvp1.TakeDamage();
+                _pvp2.TakeDamage();
+            }
             //If they're still alive, just make them jiggle a little bit
-            _pvp1.TakeDamage();
-            _pvp2.TakeDamage();
+            if (_victim == PlayerSprite.PVP1)
+               _pvp1.TakeDamage();
+            else
+               _pvp2.TakeDamage();
         }
     }
 
