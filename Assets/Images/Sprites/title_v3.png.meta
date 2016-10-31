@@ -1,21 +1,21 @@
 fileFormatVersion: 2
-guid: a2ea3b1be979bcb4a9b9a512f2a24a9c
-timeCreated: 1477753052
+guid: 744d224f85f84e9409b44182fe4f2529
+timeCreated: 1477947978
 licenseType: Free
 TextureImporter:
   fileIDToRecycleName:
-    21300000: title_0
-    21300002: title_1
-    21300004: title_2
-    21300006: title_3
-    21300008: title_4
-    21300010: title_5
-    21300012: title_6
-    21300014: title_7
+    21300000: title_v3_0
+    21300002: title_v3_1
+    21300004: title_v3_2
+    21300006: title_v3_3
+    21300008: title_v3_4
+    21300010: title_v3_5
+    21300012: title_v3_6
+    21300014: title_v3_7
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
-    enableMipMap: 1
+    enableMipMap: 0
     linearTexture: 0
     correctGamma: 0
     fadeOut: 0
@@ -34,7 +34,7 @@ TextureImporter:
   cubemapConvolutionSteps: 7
   cubemapConvolutionExponent: 1.5
   seamlessCubemap: 0
-  textureFormat: -1
+  textureFormat: -3
   maxTextureSize: 2048
   textureSettings:
     filterMode: 0
@@ -61,106 +61,106 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: title_0
+      name: title_v3_0
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: title_1
+      name: title_v3_1
       rect:
         serializedVersion: 2
-        x: 228
+        x: 273
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: title_2
+      name: title_v3_2
       rect:
         serializedVersion: 2
-        x: 456
+        x: 546
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: title_3
+      name: title_v3_3
       rect:
         serializedVersion: 2
-        x: 684
+        x: 819
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: title_4
+      name: title_v3_4
       rect:
         serializedVersion: 2
-        x: 912
+        x: 1092
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: title_5
+      name: title_v3_5
       rect:
         serializedVersion: 2
-        x: 1140
+        x: 1365
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: title_6
+      name: title_v3_6
       rect:
         serializedVersion: 2
-        x: 1368
+        x: 1638
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0
     - serializedVersion: 2
-      name: title_7
+      name: title_v3_7
       rect:
         serializedVersion: 2
-        x: 1596
+        x: 1911
         y: 0
-        width: 228
+        width: 273
         height: 154
       alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       outline: []
       tessellationDetail: 0

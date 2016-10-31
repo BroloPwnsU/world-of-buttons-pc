@@ -50,13 +50,13 @@ public class LoadingPanel : GamePanel
 	// Update is called once per frame
 	void Update ()
     {
-	    if (ButtonMaster.IsStartKey())
+	    /*if (ButtonMaster.IsStartKey())
         {
             //We can skip the loading screen by pressing the start button, just for convenience.
             CloseLoadingPanel();
         }
         else
-        {
+        {*/
             _blurbTimeLeft -= Time.deltaTime;
             _loadingTimeLeft -= Time.deltaTime;
             RenderLoadingBar();
@@ -75,7 +75,7 @@ public class LoadingPanel : GamePanel
                     RenderBlurb();
                 }
             }
-        }
+        //}
 	}
 
     void ResetLoadingBar()

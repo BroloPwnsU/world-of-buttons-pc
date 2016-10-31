@@ -145,7 +145,7 @@ public class GameBrain : MonoBehaviour
 
             //Players are not allowed to do anything during this period.
             //Since they don't have anything to do, we will just wait for the enter key to be pressed.
-            if (ButtonMaster.IsStartKey())
+            if (_buttonMaster.IsStartKey())
             {
                 EndOptionsScreen();
             }
@@ -225,7 +225,7 @@ public class GameBrain : MonoBehaviour
     /// </summary>
     void CheckResetButton()
     {
-        if (ButtonMaster.IsResetKey())
+        if (_buttonMaster.IsResetKey())
         {
             RevertToTitleScreen();
             RenderGameState();
@@ -257,7 +257,7 @@ public class GameBrain : MonoBehaviour
         {
             if (gamePanel is TitlePanel)
             {
-                ((TitlePanel)gamePanel).StartTitleScreen(StartGame);
+                ((TitlePanel)gamePanel).StartTitleScreen(_buttonMaster, StartGame);
             }
             else
             {

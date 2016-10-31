@@ -25,15 +25,17 @@ public class ButtonMaster
 
     //private Dictionary<KeyCode, KeyCode> NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
     
-    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick1;
-    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick2;
-    private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick3;
-    private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick4;
+    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick4;
+    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick7;
+    private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick6;
+    private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick1;
 
-    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick5;
-    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick6;
-    private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
-    private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
+    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick8;
+    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick2;
+    private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick3;
+    private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick9;
+
+    private JoystickAssignment AdminPositionJoystickAssignment = JoystickAssignment.Joystick5;
 
     #endregion
 
@@ -49,6 +51,8 @@ public class ButtonMaster
 
     public void SetupButtons(bool bIsBossFight)
     {
+        AssignAdminButtons();
+
         Party1CurrentButton = null;
         Party1PreviousButton = null;
         Party2CurrentButton = null;
@@ -97,6 +101,27 @@ public class ButtonMaster
             else
                 Party2Dictionary[gameButton.NumberKey] = gameButton;
         }
+    }
+
+    public void AssignAdminButtons()
+    {
+        List<KeyCode> keyCodeList = GetKeyCodeListByJoystickAssignment(AdminPositionJoystickAssignment);
+
+        _startKey = keyCodeList[1];
+        _resetKey = keyCodeList[0];
+    }
+
+    private KeyCode _resetKey;
+    private KeyCode _startKey;
+
+    public bool IsResetKey()
+    {
+        return Input.GetKeyDown(_resetKey);
+    }
+
+    public bool IsStartKey()
+    {
+        return Input.GetKeyDown(_startKey);
     }
 
     public List<GameButton> GetParty1Buttons(bool bFullSpread)
@@ -319,6 +344,20 @@ public class ButtonMaster
                         KeyCode.Tab,
                         KeyCode.KeypadMultiply,
                 };
+            case JoystickAssignment.Joystick9:
+                return new List<KeyCode>()
+                {
+                        KeyCode.Minus,
+                        KeyCode.Return,
+                        KeyCode.KeypadMinus,
+                        KeyCode.KeypadDivide,
+                        KeyCode.KeypadPeriod,
+                        KeyCode.KeypadPlus,
+                        KeyCode.Insert,
+                        KeyCode.Delete,
+                        KeyCode.LeftControl,
+                        KeyCode.LeftAlt,
+                };
             default:
                 throw new System.Exception("No joystick that high.");
         }
@@ -388,6 +427,21 @@ public class ButtonMaster
                     { "Mildly Magic Missile" },
                     { "Mostly Magic Missile" },
                     { "Markedly Magic Missile" },
+
+                };
+            case BoardPositon.Admin:
+                return new List<string>()
+                {
+                    { "Enter" },
+                    { "Reset" },
+                    { "None1" },
+                    { "None2" },
+                    { "None3" },
+                    { "None4" },
+                    { "None5" },
+                    { "None6" },
+                    { "None7" },
+                    { "None8" }
                 };
             default:
                 throw new System.Exception("Invalid board positon.");
@@ -505,17 +559,7 @@ public class ButtonMaster
     {
         return Input.GetKeyDown(KeyCode.Escape);
     }
-
-    public static bool IsResetKey()
-    {
-        return Input.GetKeyDown(KeyCode.Minus);
-    }
-
-    public static bool IsStartKey()
-    {
-        return Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
-    }
-
+    
     public GameButton GetCurrentParty1ActiveButton()
     {
         return Party1CurrentButton;
@@ -598,7 +642,8 @@ public enum JoystickAssignment
     Joystick5,
     Joystick6,
     Joystick7,
-    Joystick8
+    Joystick8,
+    Joystick9
 }
 
 public enum BoardPositon
@@ -606,5 +651,6 @@ public enum BoardPositon
     A,
     B,
     C,
-    D
+    D,
+    Admin
 }

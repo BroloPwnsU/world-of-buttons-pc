@@ -8,10 +8,12 @@ public class TitlePanel : GamePanel
     private TitleScreenGraphic _titleScreen;
     private Action EndTitleNotification;
 
-    private float _timeLeft;
     public float _characterCardDuration = 10;
     public float _titleScreenDuration = 10;
+
+    private float _timeLeft;
     private CurrentScreen _currentScreen;
+    private ButtonMaster _buttonMaster;
 
     // Use this for initialization
     void Awake ()
@@ -22,8 +24,11 @@ public class TitlePanel : GamePanel
         _timeLeft = _titleScreenDuration;
 	}
 
-    public void StartTitleScreen(Action endTitleNotification)
+
+    public void StartTitleScreen(ButtonMaster buttonMaster, Action endTitleNotification)
     {
+        _buttonMaster = buttonMaster;
+
         base.Show();
         EndTitleNotification = endTitleNotification;
 
@@ -33,7 +38,7 @@ public class TitlePanel : GamePanel
 	// Update is called once per frame
 	void Update ()
     {
-	    if (ButtonMaster.IsStartKey())
+	    if (_buttonMaster.IsStartKey())
         {
             //They pressed start.
             //Call back to the game brain for the next action.
