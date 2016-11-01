@@ -38,7 +38,8 @@ public class TitlePanel : GamePanel
 	// Update is called once per frame
 	void Update ()
     {
-	    if (_buttonMaster.IsStartKey())
+
+        if (_buttonMaster.IsStartKey())
         {
             //They pressed start.
             //Call back to the game brain for the next action.

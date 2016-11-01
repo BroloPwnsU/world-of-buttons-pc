@@ -37,6 +37,11 @@ public class ButtonMaster
 
     private JoystickAssignment AdminPositionJoystickAssignment = JoystickAssignment.Joystick5;
 
+    //private JoystickAssignment AccessiblePositionAJoystickAssignment = JoystickAssignment.Joystick10;
+    //private JoystickAssignment AccessiblePositionBJoystickAssignment = JoystickAssignment.Joystick11;
+
+    
+
     #endregion
 
     #region Constructors/Initializers
@@ -326,8 +331,8 @@ public class ButtonMaster
                         KeyCode.F15,
                         KeyCode.LeftBracket,
                         KeyCode.RightBracket,
-                        KeyCode.LeftShift,
-                        KeyCode.RightShift,
+                        KeyCode.KeypadMinus,
+                        KeyCode.KeypadPlus,
                         KeyCode.Equals,
                 };
             case JoystickAssignment.Joystick8:
@@ -338,7 +343,7 @@ public class ButtonMaster
                         KeyCode.PageDown,
                         KeyCode.End,
                         KeyCode.Home,
-                        KeyCode.Underscore,
+                        KeyCode.KeypadDivide,
                         KeyCode.Backslash,
                         KeyCode.Backspace,
                         KeyCode.Tab,
@@ -347,16 +352,16 @@ public class ButtonMaster
             case JoystickAssignment.Joystick9:
                 return new List<KeyCode>()
                 {
-                        KeyCode.Minus,
-                        KeyCode.Return,
-                        KeyCode.KeypadMinus,
-                        KeyCode.KeypadDivide,
+                        KeyCode.LeftShift,
+                        KeyCode.RightShift,
+                        KeyCode.LeftControl,
+                        KeyCode.Numlock,
+                        KeyCode.LeftAlt,
+                        KeyCode.ScrollLock,
                         KeyCode.KeypadPeriod,
-                        KeyCode.KeypadPlus,
                         KeyCode.Insert,
                         KeyCode.Delete,
-                        KeyCode.LeftControl,
-                        KeyCode.LeftAlt,
+                        KeyCode.BackQuote,
                 };
             default:
                 throw new System.Exception("No joystick that high.");
@@ -389,7 +394,7 @@ public class ButtonMaster
                     { "Bedazzling Blade" },
                     { "Bewitching Blast" },
                     { "Befuddling Backhand" },
-                    { "Don't Touch Anything" },
+                    { "Liger's Paw Casts the Spells" },
 
                     { "Activate Hax" },
                     { "Super Intense Stare" },
@@ -403,7 +408,7 @@ public class ButtonMaster
                     { "Long Distance Expectoration" }, //Especially Good Expectoration
                     { "Short Distance Assassination" }, //Especially Good Expectoration
                     { "Fake High Five" },
-                    { "Rake Thine Face" },
+                    { "Take Their Lives" },
                     { "Poetry Choke Slam" },
 
                     { "Sweep the Leg" },
@@ -523,31 +528,58 @@ public class ButtonMaster
         }
     }
 
-    static GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
+    private bool _testMode = false;
+    private int _previousIndex = -1;
+    public GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
     {
         int wButtonCount = gameButtons.Count;
         if (currentButton == null)
         {
             //The first button will be truly random because we don't have to worry about copying a previous button.
-            return gameButtons[Random.Range(0, wButtonCount)];
+
+            if (!_testMode)
+            {
+                return gameButtons[Random.Range(0, wButtonCount)];
+            }
+            else
+            {
+                int index = 15;
+                _previousIndex = index;
+                return gameButtons[index];
+            }
         }
         else
         {
             //If we've already got a current button then we need to randomly select a new one... but not the same one.
             GameButton newButton = currentButton;
-            int wCount = 0;
-            while (((newButton.NumberKey == currentButton.NumberKey)
-                        || (previousButton != null && (newButton.NumberKey == previousButton.NumberKey)))
-                    && wCount < (wButtonCount * 2))
-            {
-                int wRandom = Random.Range(0, wButtonCount);
-                //Keep cycling until we get a different random key than the one 
-                newButton = gameButtons[wRandom];
-                wCount++;
-            }
 
-            //NewButton should not be the same as current button, so replace it.
-            return newButton;
+
+            if (!_testMode)
+            {
+                int wCount = 0;
+                while (((newButton.NumberKey == currentButton.NumberKey)
+                            || (previousButton != null && (newButton.NumberKey == previousButton.NumberKey)))
+                        && wCount < (wButtonCount * 2))
+                {
+                    int wRandom = Random.Range(0, wButtonCount);
+                    //Keep cycling until we get a different random key than the one 
+                    newButton = gameButtons[wRandom];
+
+                    wCount++;
+                }
+                //NewButton should not be the same as current button, so replace it.
+                return newButton;
+            }
+            else
+            {
+
+                _previousIndex++;
+                if (_previousIndex >= wButtonCount)
+                    _previousIndex = 0;
+
+                return gameButtons[_previousIndex];
+
+            }
         }
     }
 
@@ -643,7 +675,7 @@ public enum JoystickAssignment
     Joystick6,
     Joystick7,
     Joystick8,
-    Joystick9
+    Joystick9,
 }
 
 public enum BoardPositon
