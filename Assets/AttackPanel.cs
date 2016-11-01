@@ -844,7 +844,7 @@ public class AttackPanel : GamePanel
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
         _buttonNamePanel.Show();
         _buttonNamePanel.SetText(
-            _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString()
+            _buttonMaster.GetCurrentParty1ActiveButton().Name
             );
     }
 

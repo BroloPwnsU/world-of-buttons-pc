@@ -6,6 +6,10 @@ public class ButtonMaster
 {
     #region Properties
 
+
+    private bool _testMode = false;
+    private int _previousIndex = -1;
+
     private bool _bDuplicatedButtons = true;
     private bool _bFullSpread = true;
 
@@ -26,11 +30,11 @@ public class ButtonMaster
     //private Dictionary<KeyCode, KeyCode> NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
     
     private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick4;
-    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick7;
-    private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick6;
+    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick8;
+    private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick7;
     private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick1;
 
-    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick8;
+    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick6;
     private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick2;
     private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick3;
     private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick9;
@@ -527,9 +531,6 @@ public class ButtonMaster
             throw new System.Exception("Could not find matching button.");
         }
     }
-
-    private bool _testMode = false;
-    private int _previousIndex = -1;
     public GameButton GetRandomButton(List<GameButton> gameButtons, GameButton currentButton, GameButton previousButton)
     {
         int wButtonCount = gameButtons.Count;
