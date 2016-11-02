@@ -6,6 +6,8 @@ using System.Collections.Generic;
 
 public class AttackPanel : GamePanel
 {
+    private bool _testMode = true;
+
     public bool UseTimer;
     public float TimeBetweenAttackCycles;
 
@@ -843,9 +845,19 @@ public class AttackPanel : GamePanel
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
         _buttonNamePanel.Show();
-        _buttonNamePanel.SetText(
-            _buttonMaster.GetCurrentParty1ActiveButton().Name
-            );
+
+        if (_testMode)
+        {
+            _buttonNamePanel.SetText(
+                _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString() + " - " + _buttonMaster.GetCurrentParty2ActiveButton().NumberKey.ToString()
+                );
+        }
+        else
+        {
+            _buttonNamePanel.SetText(
+                _buttonMaster.GetCurrentParty1ActiveButton().Name
+                );
+        }
     }
 
     IEnumerator UnthreadedDelay(float fSeconds, Action thingToExecute)

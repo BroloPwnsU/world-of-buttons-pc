@@ -29,17 +29,17 @@ public class ButtonMaster
 
     //private Dictionary<KeyCode, KeyCode> NumberToLetterKeyMapping = new Dictionary<KeyCode, KeyCode>();
     
-    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick4;
-    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick8;
-    private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick7;
-    private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick1;
+    private JoystickAssignment Party1PositonAJoystickAssignment = JoystickAssignment.Joystick1;
+    private JoystickAssignment Party1PositonBJoystickAssignment = JoystickAssignment.Joystick2;
+    private JoystickAssignment Party1PositonCJoystickAssignment = JoystickAssignment.Joystick3;
+    private JoystickAssignment Party1PositonDJoystickAssignment = JoystickAssignment.Joystick4;
 
-    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick6;
-    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick2;
-    private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick3;
-    private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick9;
+    private JoystickAssignment Party2PositonAJoystickAssignment = JoystickAssignment.Joystick5;
+    private JoystickAssignment Party2PositonBJoystickAssignment = JoystickAssignment.Joystick6;
+    private JoystickAssignment Party2PositonCJoystickAssignment = JoystickAssignment.Joystick7;
+    private JoystickAssignment Party2PositonDJoystickAssignment = JoystickAssignment.Joystick8;
 
-    private JoystickAssignment AdminPositionJoystickAssignment = JoystickAssignment.Joystick5;
+    private JoystickAssignment AdminPositionJoystickAssignment = JoystickAssignment.Joystick9;
 
     //private JoystickAssignment AccessiblePositionAJoystickAssignment = JoystickAssignment.Joystick10;
     //private JoystickAssignment AccessiblePositionBJoystickAssignment = JoystickAssignment.Joystick11;
