@@ -55,8 +55,6 @@ public class MenuSelector : MonoBehaviour {
 
     public void Destroy()
     {
-        Debug.Log("Destorying");
-
         if (gameObject != null)
             Destroy(gameObject);
     }

@@ -3,7 +3,7 @@ using System.Collections;
 
 public class MenuArrow : MonoBehaviour {
 
-    public Renderer rend;
+    private Renderer rend;
 
     private Color colorShow = new Color(255, 0, 0, 1);
     private Color colorHide = new Color(255, 0, 0, 0);

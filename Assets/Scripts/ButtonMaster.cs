@@ -610,14 +610,14 @@ public class ButtonMaster
 
     public bool IsCurrentButtonParty1(KeyCode numberKey)
     {
-        Debug.Log("Current Party 2 button: " + Party1CurrentButton.NumberKey + " ... " + Party1CurrentButton.Name);
+        //Debug.Log("Current Party 2 button: " + Party1CurrentButton.NumberKey + " ... " + Party1CurrentButton.Name);
         return (Party1CurrentButton != null
             && Party1CurrentButton.NumberKey == numberKey);
     }
 
     public bool IsCurrentButtonParty2(KeyCode numberKey)
     {
-        Debug.Log("Current Party 2 button: " + Party2CurrentButton.NumberKey + " ... " + Party2CurrentButton.Name);
+        //Debug.Log("Current Party 2 button: " + Party2CurrentButton.NumberKey + " ... " + Party2CurrentButton.Name);
         return (Party2CurrentButton != null
             && Party2CurrentButton.NumberKey == numberKey);
     }

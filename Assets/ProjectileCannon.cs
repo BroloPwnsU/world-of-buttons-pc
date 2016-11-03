@@ -19,10 +19,10 @@ public class ProjectileCannon : MonoBehaviour
     {
         PlayLaser();
 
-        Vector3 thisPosition = new Vector3(0, 0, 0);
+        //Vector3 thisPosition = new Vector3(0, 0, 0);
         Quaternion quaternion = new Quaternion(0, 0, 0, 0);
 
-        Debug.Log("fire!");
+        //Debug.Log("fire!");
         GameObject projectileClone = (GameObject)Instantiate(
             ProjectilePrefab,
             gameObject.transform.position, //transform.position, 
@@ -33,10 +33,10 @@ public class ProjectileCannon : MonoBehaviour
 
         projectileClone.transform.localScale = new Vector3(BulletScale, BulletScale, 1);
 
-        Debug.Log("Origin Position: " + projectileClone.transform.position.x + ", " + projectileClone.transform.position.y + ", " + projectileClone.transform.position.z);
-        Debug.Log("Origin Local Position: " + projectileClone.transform.localPosition.x + ", " + projectileClone.transform.localPosition.y + ", " + projectileClone.transform.localPosition.z);
+        //Debug.Log("Origin Position: " + projectileClone.transform.position.x + ", " + projectileClone.transform.position.y + ", " + projectileClone.transform.position.z);
+        //Debug.Log("Origin Local Position: " + projectileClone.transform.localPosition.x + ", " + projectileClone.transform.localPosition.y + ", " + projectileClone.transform.localPosition.z);
 
-        Debug.Log("Target Position: " + targetPosition.x + ", " + targetPosition.y + ", " + targetPosition.z);
+        //Debug.Log("Target Position: " + targetPosition.x + ", " + targetPosition.y + ", " + targetPosition.z);
 
         //We created the projectile. Now get it going!
         Projectile projectile = projectileClone.GetComponent<Projectile>();

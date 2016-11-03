@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Party1VictoryPanel : GamePanel {
+public class Party1VictoryPanel : VictoryPanel
+{
 }

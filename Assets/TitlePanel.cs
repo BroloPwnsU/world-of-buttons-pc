@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class TitlePanel : GamePanel
 {
@@ -15,28 +16,40 @@ public class TitlePanel : GamePanel
     private CurrentScreen _currentScreen;
     private ButtonMaster _buttonMaster;
 
+    private AudioSource _audioSource;
+    public List<AudioClip> MusicClips;
+    public float _musicVolume = 0.5f;
+
     // Use this for initialization
-    void Awake ()
+    void Awake()
     {
         _currentScreen = CurrentScreen.None;
         _characterCard = GetComponentInChildren<CharacterCard>(true);
         _titleScreen = GetComponentInChildren<TitleScreenGraphic>(true);
         _timeLeft = _titleScreenDuration;
-	}
+        _audioSource = GetComponent<AudioSource>();
+    }
 
-
-    public void StartTitleScreen(ButtonMaster buttonMaster, Action endTitleNotification)
+    public void StartTitleScreen(ButtonMaster buttonMaster, float musicVolume, Action endTitleNotification)
     {
         _buttonMaster = buttonMaster;
+        _musicVolume = musicVolume;
 
         base.Show();
         EndTitleNotification = endTitleNotification;
 
         ShowTitleScreen();
+        PlayMusic();
     }
-	
-	// Update is called once per frame
-	void Update ()
+
+    public override void Hide()
+    {
+        StopMusic();
+        base.Hide();
+    }
+
+    // Update is called once per frame
+    void Update()
     {
 
         if (_buttonMaster.IsStartKey())
@@ -56,7 +69,7 @@ public class TitlePanel : GamePanel
 
     void ChangeScreen()
     {
-        switch(_currentScreen)
+        switch (_currentScreen)
         {
             case CurrentScreen.TitleScreen:
                 ShowCharacterCard();
@@ -93,5 +106,24 @@ public class TitlePanel : GamePanel
         None,
         TitleScreen,
         CharacterCard
+    }
+
+    void PlayMusic()
+    {
+        if (MusicClips != null && MusicClips.Count > 0)
+        {
+            _audioSource.loop = true;
+            _audioSource.volume = _musicVolume;
+            _audioSource.clip = MusicClips[UnityEngine.Random.Range(0, MusicClips.Count - 1)];
+            _audioSource.Play();
+        }
+    }
+
+    void StopMusic()
+    {
+        if (_audioSource.isPlaying)
+        {
+            _audioSource.Stop();
+        }
     }
 }

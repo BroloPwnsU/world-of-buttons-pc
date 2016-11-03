@@ -12,14 +12,12 @@ public class PVPSprite : MonoBehaviour
 
     public void Jump()
     {
-        //Debug.Log("Animator layer count: " + animator.layerCount);
         //animator.Play("bf_jump", 0);
         animator.SetTrigger("Jump");
     }
 
     public void Land()
     {
-        //Debug.Log("Animator layer count: " + animator.layerCount);
         //animator.Play("bf_jump", 0);
         animator.SetTrigger("Land");
     }

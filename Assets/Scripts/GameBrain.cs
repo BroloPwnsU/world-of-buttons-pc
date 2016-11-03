@@ -65,7 +65,8 @@ public class GameBrain : MonoBehaviour
     public float BossStartHealth;
     public float PVPStartHealth;
     public float PVEStartHealth;
-    
+
+    public int DefaultRoundCount = 5;
     public float BossMaximumDamagePerAttack;
     public float BossMinimumDamagePerAttack;
     public float PlayerMinimumDamagePerAttack;
@@ -77,7 +78,9 @@ public class GameBrain : MonoBehaviour
     public float BuffCritChancePerTier;
     public float BuffNonsense;
 
-    private OptionsPanel _buffPanel;
+    public float MusicVolume = 0.3f;
+
+    private OptionsPanel _optionsPanel;
     private AttackPanel _attackPanel;
 
     #endregion
@@ -87,13 +90,18 @@ public class GameBrain : MonoBehaviour
     // Use this for initialization
     void Awake()
     {
-        _buffPanel = this.OptionsPanel.GetComponent<OptionsPanel>();
+        _optionsPanel = this.OptionsPanel.GetComponent<OptionsPanel>();
         _buttonMaster = new ButtonMaster(_bossFight, DuplicateButtons, FullSpread);
-
         AssembleGamePanelsAndScripts();
+    }
+
+    void Start()
+    {
+        ApplyDefaults();
 
         //_gameButtonList = GetGameButtonList();
         RevertToTitleScreen();
+
     }
 
     void AssembleGamePanelsAndScripts()
@@ -142,13 +150,6 @@ public class GameBrain : MonoBehaviour
         else if (_gameState == GameState.OptionsScreen)
         {
             #region Options - Admin choses game mode
-
-            //Players are not allowed to do anything during this period.
-            //Since they don't have anything to do, we will just wait for the enter key to be pressed.
-            if (_buttonMaster.IsStartKey())
-            {
-                EndOptionsScreen();
-            }
 
             #endregion
         }
@@ -257,7 +258,7 @@ public class GameBrain : MonoBehaviour
         {
             if (gamePanel is TitlePanel)
             {
-                ((TitlePanel)gamePanel).StartTitleScreen(_buttonMaster, StartGame);
+                ((TitlePanel)gamePanel).StartTitleScreen(_buttonMaster, _musicVolume, StartGame);
             }
             else
             {
@@ -283,7 +284,9 @@ public class GameBrain : MonoBehaviour
         _gameState = GameState.OptionsScreen;
         RenderGameOptionsScreen();
 
-        _buffPanel.StartOptions(GetOptionsSettings());
+        OptionPanelSettings ops = GetOptionsSettings();
+         
+        _optionsPanel.StartOptions(ops, _buttonMaster, EndOptionsScreen);
 
         //Assign some random values for now
         _bossFight = true;
@@ -315,6 +318,18 @@ public class GameBrain : MonoBehaviour
     private string OPTION_MENU_MODE_VALUE_PVP = "PVP";
     private string OPTION_MENU_ROUNDS = "ROUNDS";
     private string OPTION_MENU_CRIT_CHANCE = "CRIT CHANCE";
+    private string OPTION_MENU_PLAYER_HEALTH = "HEALTH";
+    private string OPTION_MENU_MUSIC_VOLUME = "MUSIC VOL";
+
+    private int _roundCount;
+    private float _musicVolume;
+
+    void ApplyDefaults()
+    {
+        _roundCount = DefaultRoundCount;
+        _pvpStartHealth = PVPStartHealth;
+        _musicVolume = MusicVolume;
+    }
 
     OptionPanelSettings GetOptionsSettings()
     {
@@ -342,25 +357,48 @@ public class GameBrain : MonoBehaviour
             "5",
             "7"
         };
-
-        //Populate default from currently selected value.
-        string sSelectedRoundValue = roundValues[2];
-        if (_victoriesNeededToWin == 1)
-            sSelectedRoundValue = roundValues[0];
-        else if (_victoriesNeededToWin == 2)
-            sSelectedRoundValue = roundValues[1];
-        else if (_victoriesNeededToWin == 3)
-            sSelectedRoundValue = roundValues[2];
-        else if (_victoriesNeededToWin == 4)
-            sSelectedRoundValue = roundValues[3];
-
+        
         OptionMenu omRounds = new OptionMenu(
             OPTION_MENU_ROUNDS,
             roundValues.ToArray(),
-            sSelectedRoundValue
+            _roundCount.ToString()
             );
 
         bmList.Add(omRounds);
+
+        List<string> healthValues = new List<string>();
+        for (int i = 1; i <= 20; i++)
+        {
+            healthValues.Add(
+                Mathf.FloorToInt(PlayerMaximumDamagePerAttack * i).ToString()
+                );
+        }
+
+        //Populate default from currently selected value.
+
+        OptionMenu omHealth = new OptionMenu(
+            OPTION_MENU_PLAYER_HEALTH,
+            healthValues.ToArray(),
+            Mathf.FloorToInt(_pvpStartHealth).ToString()
+            );
+
+        bmList.Add(omHealth);
+
+        List<string> volumeValues = new List<string>();
+        for (int i = 1; i <= 10; i++)
+        {
+            volumeValues.Add(i.ToString());
+        }
+
+        //Populate default from currently selected value.
+
+        OptionMenu omMusicVolume = new OptionMenu(
+            OPTION_MENU_MUSIC_VOLUME,
+            volumeValues.ToArray(),
+            Mathf.FloorToInt(_musicVolume * 10).ToString()
+            );
+
+        bmList.Add(omMusicVolume);
 
         /*
         List<string> critValues = new List<string>()
@@ -389,7 +427,6 @@ public class GameBrain : MonoBehaviour
     void EndOptionsScreen()
     {
         StartCoroutine(UnthreadedDelay(1.1f, ApplyGameOptions));
-        StartLoadingScreen();
     }
 
     /// <summary>
@@ -398,7 +435,7 @@ public class GameBrain : MonoBehaviour
     void ApplyGameOptions()
     {
         //First just figure out if it's a boss fight or not.
-        Dictionary<string, string> selectedOptions = _buffPanel.GetSelectedOptions();
+        Dictionary<string, string> selectedOptions = _optionsPanel.GetSelectedOptions();
         foreach (string sKey in selectedOptions.Keys)
         {
             Debug.Log("Option: " + sKey + " - " + selectedOptions[sKey]);
@@ -424,18 +461,22 @@ public class GameBrain : MonoBehaviour
         if (selectedOptions[OPTION_MENU_ROUNDS] == "1")
         {
             _victoriesNeededToWin = 1;
+            _roundCount = 1;
         }
         else if (selectedOptions[OPTION_MENU_ROUNDS] == "3")
         {
             _victoriesNeededToWin = 2;
+            _roundCount = 3;
         }
         else if (selectedOptions[OPTION_MENU_ROUNDS] == "5")
         {
             _victoriesNeededToWin = 3;
+            _roundCount = 5;
         }
         else if (selectedOptions[OPTION_MENU_ROUNDS] == "7")
         {
             _victoriesNeededToWin = 4;
+            _roundCount = 7;
         }
 
         //Determine crit chance, if any
@@ -461,20 +502,44 @@ public class GameBrain : MonoBehaviour
             _buffParty2CritChance = dCritChance;
         }
 
+        //Determine Player Health
+        float dPlayerHealth = _pvpStartHealth;
+        if (selectedOptions.ContainsKey(OPTION_MENU_PLAYER_HEALTH))
+        {
+            string sPlayerHealth = selectedOptions[OPTION_MENU_PLAYER_HEALTH];
+            if (!String.IsNullOrEmpty(sPlayerHealth))
+            {
+                dPlayerHealth = float.Parse(sPlayerHealth);
+            }
+        }
+
         //Apply health buffs/debuffs to starting health meters
 
         //If it's a PVP fight then player 1 uses the boss's stats. Otherwise it copies player 1.
         //We do this so the PVP fight lasts a good long while.
 
         //Don't apply debuffs/buffs during PVP.
-        _pvpStartHealth = PVPStartHealth;
+        _pvpStartHealth = dPlayerHealth;
 
         //It's PVE... apply the debuffs to boss health.
         _bossStartHealth = BossStartHealth * (1 - _buffDecreaseBossHealthPercent);
         _pveStartHealth = PVEStartHealth * (1 + _buffIncreasePlayerHealthPercent);
 
+        //Determine Music Volume
+        if (selectedOptions.ContainsKey(OPTION_MENU_MUSIC_VOLUME))
+        {
+            string sMusicVolume = selectedOptions[OPTION_MENU_MUSIC_VOLUME];
+            if (!String.IsNullOrEmpty(sMusicVolume))
+            {
+                _musicVolume = float.Parse(sMusicVolume) * 0.1f;
+            }
+        }
+
         //Re-initialize the buttons for the current fight.
         _buttonMaster.SetupButtons(_bossFight);
+
+
+        StartLoadingScreen();
     }
 
     #endregion
@@ -580,6 +645,7 @@ public class GameBrain : MonoBehaviour
             BuffIncreaseActiveTimeMultiplier = _buffIncreaseActiveTimeMultiplier,
             BuffParty1CritChance = _buffParty1CritChance,
             BuffParty2CritChance = _buffParty2CritChance,
+            MusicVolume = _musicVolume,
             EndRoundNotification = EndRoundNotification
         };
 
@@ -687,7 +753,7 @@ public class GameBrain : MonoBehaviour
         {
             if (gamePanel is Party1VictoryPanel)
             {
-                gamePanel.Show();
+                ((Party1VictoryPanel)gamePanel).Show(_musicVolume);
             }
             else
             {
@@ -702,7 +768,7 @@ public class GameBrain : MonoBehaviour
         {
             if (gamePanel is Party2VictoryPanel)
             {
-                gamePanel.Show();
+                ((Party2VictoryPanel)gamePanel).Show(_musicVolume);
             }
             else
             {
@@ -771,9 +837,7 @@ public class GameBrain : MonoBehaviour
     // Update is called once per frame
     IEnumerator UnthreadedDelay(float fSeconds, Action thingToExecute)
     {
-        print(Time.time);
         yield return new WaitForSeconds(fSeconds);
-        print(Time.time);
         thingToExecute();
     }
 

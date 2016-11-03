@@ -15,4 +15,9 @@ public class TheBigButton : MonoBehaviour
     {
         animator.SetTrigger("Press");
     }
+    
+    public void Reset()
+    {
+        animator.SetTrigger("Reset");
+    }
 }

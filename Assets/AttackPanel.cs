@@ -31,10 +31,14 @@ public class AttackPanel : GamePanel
     public GameObject TimerPanel;
     public GameObject PanicModePanel;
 
+    public float AttackGetReadyTimeSeconds = 1.5f;
+    public float RoundVictoryTimeSeconds = 2;
     public AudioClip[] RoundVictorySounds;
     public float RoundVictoryVolume = 1.0f;
+    public List<AudioClip> MusicClips;
+    private float _musicVolume = 0.5f;
+    public AudioClip FinalRoundMusicClip;
 
-    public float RoundVictoryTimeSeconds = 2;
 
     //private bool AutoInputDualActionMode = true;
 
@@ -57,6 +61,7 @@ public class AttackPanel : GamePanel
     private float _currentTimeLeftSeconds;
 
     private ButtonNamePanel _buttonNamePanel;
+    private AttackGetReadyPanel _getReadyPanel;
 
     private RoundResult _roundResult = null;
     private ResolutionPanel _resolutionPanel;
@@ -90,6 +95,7 @@ public class AttackPanel : GamePanel
         _resolutionPanel = GetComponentInChildren<ResolutionPanel>(true);
         _theBigButton = GetComponentInChildren<TheBigButton>(true);
         _buttonNamePanel = GetComponentInChildren<ButtonNamePanel>(true);
+        _getReadyPanel = GetComponentInChildren<AttackGetReadyPanel>(true);
         _cannon = GetComponentInChildren<ProjectileCannon>(true);
 
         _audioSource = GetComponent<AudioSource>();
@@ -97,9 +103,11 @@ public class AttackPanel : GamePanel
 
     public void StartBattle(ButtonMaster buttonMaster, BattleSettings battleSettings)
     {
+        _freezeTime = true;
         _buttonMaster = buttonMaster;
         _battleSettings = battleSettings;
 
+        _musicVolume = _battleSettings.MusicVolume;
 
         if (_battleSettings.BossFight)
         {
@@ -134,13 +142,30 @@ public class AttackPanel : GamePanel
             _battleSettings.Party2CurrentVictories
             );
 
+        bool bFinalRound = false;
+        if (_battleSettings.VictoriesNeededToWin > 1
+            && _battleSettings.Party1CurrentVictories == (_battleSettings.VictoriesNeededToWin - 1)
+            && _battleSettings.Party2CurrentVictories == (_battleSettings.VictoriesNeededToWin - 1))
+        {
+            bFinalRound = true;
+        }
+
+        PlayMusic(bFinalRound);
+
         _battleRaging = true;
         EndRoundNotification = _battleSettings.EndRoundNotification;
 
         //Start on normal mode, move to Panic Mode later
         PanicModePanel.SetActive(false);
 
+
         StartAttackCycle(AttackMode.Normal);
+    }
+
+    public override void Hide()
+    {
+        StopMusic();
+        base.Hide();
     }
 
     void Update()
@@ -165,7 +190,7 @@ public class AttackPanel : GamePanel
             }
         }
     }
-    
+
     #region State - Attack Cycle
 
     /// <summary>
@@ -175,8 +200,17 @@ public class AttackPanel : GamePanel
     /// <param name="attackMode"></param>
     void StartAttackCycle(AttackMode attackMode)
     {
-        //Debug.Log("Start attack cycle");
+        //First show a quick Get Ready message that flashes like a warning!
+        ShowGetReady(attackMode);
+        
+        StartCoroutine(UnthreadedDelay(
+            AttackGetReadyTimeSeconds,
+            SelectNewButton
+            ));
+    }
 
+    void SelectNewButton()
+    {
         #region Determine Timer
 
         //The attack timer starts as a high duration and slowly gets smaller as the game drags on.
@@ -353,7 +387,7 @@ public class AttackPanel : GamePanel
             //Check all possible joystick number keys to look for multiple presses.
             if (Input.GetKeyDown(numberKey))
             {
-                Debug.Log("Key strike: " + numberKey);
+                //Debug.Log("Key strike: " + numberKey);
 
                 //Someone pressed a joystick key!
                 numberKeysPressed.Add(numberKey);
@@ -519,26 +553,22 @@ public class AttackPanel : GamePanel
                 {
                     KeyCode numberKey = numberKeysPressed[0];
 
-                    Debug.Log("Single press " + numberKey);
                     if (_buttonMaster.IsKeyParty1(numberKey))
                     {
                         //Pressed by party 1. Was it correct?
                         if (_buttonMaster.IsCurrentButtonParty1(numberKey))
                         {
                             //Success!
-                            Debug.Log("Single press succ 1 " + numberKey);
                             Party1InputSuccess();
                         }
                         else
                         {
                             //They pressed the wrong button
-                            Debug.Log("Single press fail 1 " + numberKey);
                             Party1InputFailByButtonPress();
                         }
                     }
                     else if (_buttonMaster.IsKeyParty2(numberKey))
                     {
-                        Debug.Log("Single press party 2 " + numberKey);
                         //Pressed by party 2. Was it correct?
                         if (_buttonMaster.IsCurrentButtonParty2(numberKey))
                         {
@@ -817,14 +847,11 @@ public class AttackPanel : GamePanel
         }
     }
 
-    void SetGetReadyText()
+    void ShowGetReady(AttackMode attackMode)
     {
-        //Always show player 1 button commands
-
-        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
-        //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
-        _buttonNamePanel.Show();
-        _buttonNamePanel.SetText(GetReadyMessage);
+        _buttonNamePanel.Hide();
+        _getReadyPanel.Show(attackMode);
+        _theBigButton.Reset();
     }
 
     void SetFailText(string sText)
@@ -834,6 +861,7 @@ public class AttackPanel : GamePanel
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
         _buttonNamePanel.Show();
+        _getReadyPanel.Hide();
         _buttonNamePanel.SetText(sText);
     }
 
@@ -845,6 +873,7 @@ public class AttackPanel : GamePanel
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name + " - " + _buttonMaster.GetCurrentParty1ActiveButton().NumberKey.ToString();
         //ButtonNameText.text = _buttonMaster.GetCurrentParty1ActiveButton().Name;
         _buttonNamePanel.Show();
+        _getReadyPanel.Hide();
 
         if (_testMode)
         {
@@ -922,6 +951,30 @@ public class AttackPanel : GamePanel
             RoundVictorySounds[UnityEngine.Random.Range(0, RoundVictorySounds.Length - 1)],
             RoundVictoryVolume
             );
+        }
+    }
+
+    void PlayMusic(bool bIsFinalRound)
+    {
+        _audioSource.loop = true;
+        _audioSource.volume = _musicVolume;
+        if (bIsFinalRound && FinalRoundMusicClip != null)
+        {
+            _audioSource.clip = FinalRoundMusicClip;
+            _audioSource.Play();
+        }
+        else if (MusicClips != null && MusicClips.Count > 0)
+        {
+            _audioSource.clip = MusicClips[UnityEngine.Random.Range(0, MusicClips.Count - 1)];
+            _audioSource.Play();
+        }
+    }
+
+    void StopMusic()
+    {
+        if (_audioSource.isPlaying)
+        {
+            _audioSource.Stop();
         }
     }
 

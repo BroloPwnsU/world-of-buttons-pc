@@ -9,8 +9,6 @@ public class PartyGroup : MonoBehaviour
 
     //There is a component called...
     private HealthBar _healthBar;
-    private DamageSprite _damageSprite;
-    private CritSprite _critSprite;
     private Text _healthText;
     private bool _bIsPVP = false;
 
@@ -22,7 +20,6 @@ public class PartyGroup : MonoBehaviour
     private Vector3 _characterSpriteEndPosition;
 
     private PlayerSpriteJumpState _currentJumpState;
-    private PlayerSprite _activePlayerSprite;
     private Transform _activePlayerSpriteTransform;
     private Vector3 _activePlayerSpriteStartPosition;
 
@@ -48,7 +45,9 @@ public class PartyGroup : MonoBehaviour
     public List<AudioClip> CritSounds;
     public List<AudioClip> FailSounds;
 
-    public float JumpVolume = 0.5f;
+    public float AttackVolume = 1.0f;
+    public float JumpVolume = 1.0f;
+    public float FailVolume = 1.0f;
 
     public GameObject PVESpritePanel;
     public GameObject PVPSpritePanel;
@@ -72,8 +71,6 @@ public class PartyGroup : MonoBehaviour
     void Awake()
     {
         _healthBar = gameObject.GetComponentInChildren<HealthBar>(true);
-        _damageSprite = gameObject.GetComponentInChildren<DamageSprite>(true);
-        _critSprite = gameObject.GetComponentInChildren<CritSprite>(true);
         _audioSource = GetComponent<AudioSource>();
 
         //If we have to add multiple text boxes then we will need this script to sort through them and select the proper textbox
@@ -267,8 +264,7 @@ public class PartyGroup : MonoBehaviour
             player = PlayerSprite.PVP2;
             spriteScript = _pvp2;
         }
-
-        _activePlayerSprite = player;
+        
         _activeSpriteScript = spriteScript;
         _activePlayerSpriteTransform = GetPlayerSpriteTransform(player);
 
@@ -534,14 +530,14 @@ public class PartyGroup : MonoBehaviour
         {
             _audioSource.PlayOneShot(
                 CritSounds[Random.Range(0, CritSounds.Count - 1)],
-                0.5f
+                AttackVolume
                 );
         }
         else if (AttackSounds != null && AttackSounds.Count > 0)
         {
             _audioSource.PlayOneShot(
                 AttackSounds[Random.Range(0, AttackSounds.Count - 1)],
-                0.5f
+                AttackVolume
                 );
         }
     }
@@ -552,7 +548,7 @@ public class PartyGroup : MonoBehaviour
         {
             _audioSource.PlayOneShot(
                 FailSounds[Random.Range(0, FailSounds.Count - 1)],
-                0.5f
+                FailVolume
                 );
         }
     }

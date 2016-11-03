@@ -3,7 +3,8 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
-public class OptionsPanel : GamePanel {
+public class OptionsPanel : GamePanel
+{
 
     public AudioClip ChangeValueAudioClip;
     public AudioClip ContinueAudioClip;
@@ -14,6 +15,9 @@ public class OptionsPanel : GamePanel {
     public GameObject _menuSelectorPrefab;
 
     private bool _panelActive = false;
+    private ButtonMaster _buttonMaster;
+
+    private System.Action EndOptionsScreenNotification;
 
     // Use this for initialization
     void Awake ()
@@ -47,7 +51,7 @@ public class OptionsPanel : GamePanel {
                 //Move Right in menu.
                 MoveRight();
             }
-            else if (Input.GetKeyDown(KeyCode.KeypadEnter) || Input.GetKeyDown(KeyCode.Return))
+            else if (_buttonMaster.IsStartKey())
             {
                 if (gameObject.activeSelf)
                     //Pressed enter. Only works when hovering on the Continue button.
@@ -65,10 +69,15 @@ public class OptionsPanel : GamePanel {
         {
             om.Script.Destroy();
         }
+
+        EndOptionsScreenNotification();
     }
 
-    public void StartOptions(OptionPanelSettings settings)
+    public void StartOptions(OptionPanelSettings settings, ButtonMaster buttonMaster, System.Action endOptionsScreenNotification)
     {
+        _buttonMaster = buttonMaster;
+        EndOptionsScreenNotification = endOptionsScreenNotification;
+
         Vector3 thisPosition = new Vector3(0, 0, 0);
         Quaternion quaternion = new Quaternion(0, 0, 0, 0);
         if (settings != null)

@@ -24,6 +24,8 @@ public class BattleSettings
     public float BuffParty1CritChance;
     public float BuffParty2CritChance;
 
+    public float MusicVolume;
+
     public Action<RoundResult> EndRoundNotification;
 }
 

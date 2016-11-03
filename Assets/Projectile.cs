@@ -37,7 +37,7 @@ public class Projectile : MonoBehaviour
 
     public void Destroy()
     {
-        Debug.Log("Destorying");
+        //Debug.Log("Destorying");
 
         if (gameObject != null)
             Destroy(gameObject);
@@ -128,8 +128,8 @@ public class Projectile : MonoBehaviour
 
         transform.Rotate(new Vector3(0, 0, RotationEulerAngle));
 
-        Debug.Log("Position: " + transform.position.x + ", " + transform.position.y + ", " + transform.position.z);
-        Debug.Log("Local Position: " + transform.localPosition.x + ", " + transform.localPosition.y + ", " + transform.localPosition.z);
+        //Debug.Log("Position: " + transform.position.x + ", " + transform.position.y + ", " + transform.position.z);
+        //Debug.Log("Local Position: " + transform.localPosition.x + ", " + transform.localPosition.y + ", " + transform.localPosition.z);
     }
 
     Vector3 GetFlyPositon(float timeElapsed, float flightTime, Vector3 startPoint, Vector3 endPoint)

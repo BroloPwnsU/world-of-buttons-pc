@@ -9,7 +9,7 @@ public interface IGamePanel
 
 public abstract class GamePanel : MonoBehaviour
 {
-    public void Show()
+    public virtual void Show()
     {
         if (!gameObject.activeSelf)
         {
@@ -17,7 +17,7 @@ public abstract class GamePanel : MonoBehaviour
         }
     }
 
-    public void Hide()
+    public virtual void Hide()
     {
         if (gameObject.activeSelf)
         {
