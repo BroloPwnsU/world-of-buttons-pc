@@ -107,6 +107,8 @@ public class AttackPanel : GamePanel
         _buttonMaster = buttonMaster;
         _battleSettings = battleSettings;
 
+        Debug.Log(_battleSettings.TestMode);
+        _testMode = _battleSettings.TestMode;
         _musicVolume = _battleSettings.MusicVolume;
 
         if (_battleSettings.BossFight)

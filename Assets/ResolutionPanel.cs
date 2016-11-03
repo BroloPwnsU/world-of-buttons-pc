@@ -13,6 +13,8 @@ public class ResolutionPanel : GamePanel
 
     public void SetVictor(RoundResult roundResult)
     {
+        this.Show();
+
         string sText = "Who won? I don't know!";
         if (roundResult.Victor == BattleVictor.Boss)
         {

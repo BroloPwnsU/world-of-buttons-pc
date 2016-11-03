@@ -50,10 +50,24 @@ public class ButtonMaster
 
     #region Constructors/Initializers
 
-    public ButtonMaster(bool bIsBossFight, bool bDuplicatedButtons, bool bFullSpread)
+    public ButtonMaster(bool bIsBossFight, JoystickMapping joystickMapping, bool bDuplicatedButtons, bool bFullSpread)
     {
         _bDuplicatedButtons = bDuplicatedButtons;
         _bFullSpread = bFullSpread;
+        
+        this.Party1PositonAJoystickAssignment = (JoystickAssignment)joystickMapping.BlueA;
+        this.Party1PositonBJoystickAssignment = (JoystickAssignment)joystickMapping.BlueB;
+        this.Party1PositonCJoystickAssignment = (JoystickAssignment)joystickMapping.BlueC;
+        this.Party1PositonDJoystickAssignment = (JoystickAssignment)joystickMapping.BlueD;
+
+        this.Party2PositonAJoystickAssignment = (JoystickAssignment)joystickMapping.GreenA;
+        this.Party2PositonBJoystickAssignment = (JoystickAssignment)joystickMapping.GreenB;
+        this.Party2PositonCJoystickAssignment = (JoystickAssignment)joystickMapping.GreenC;
+        this.Party2PositonDJoystickAssignment = (JoystickAssignment)joystickMapping.GreenD;
+
+        this.AdminPositionJoystickAssignment = (JoystickAssignment)joystickMapping.Admin;
+
+        this._testMode = joystickMapping.TestMode;
 
         SetupButtons(bIsBossFight);
     }
@@ -544,7 +558,7 @@ public class ButtonMaster
             }
             else
             {
-                int index = 15;
+                int index = 0;
                 _previousIndex = index;
                 return gameButtons[index];
             }
@@ -666,17 +680,17 @@ public class GameButton
     }
 }
 
-public enum JoystickAssignment
+public enum JoystickAssignment : int
 {
-    Joystick1,
-    Joystick2,
-    Joystick3,
-    Joystick4,
-    Joystick5,
-    Joystick6,
-    Joystick7,
-    Joystick8,
-    Joystick9,
+    Joystick1 = 1,
+    Joystick2 = 2,
+    Joystick3 = 3,
+    Joystick4 = 4,
+    Joystick5 = 5,
+    Joystick6 = 6,
+    Joystick7 = 7,
+    Joystick8 = 8,
+    Joystick9 = 9,
 }
 
 public enum BoardPositon

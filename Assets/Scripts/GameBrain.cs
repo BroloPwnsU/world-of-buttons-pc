@@ -90,13 +90,18 @@ public class GameBrain : MonoBehaviour
     // Use this for initialization
     void Awake()
     {
+        _joystickMapping = JoystickMapping.LoadFromFile("joystick-mapping.json");
+
         _optionsPanel = this.OptionsPanel.GetComponent<OptionsPanel>();
-        _buttonMaster = new ButtonMaster(_bossFight, DuplicateButtons, FullSpread);
+        _buttonMaster = new ButtonMaster(_bossFight, _joystickMapping, DuplicateButtons, FullSpread);
         AssembleGamePanelsAndScripts();
     }
 
+    private JoystickMapping _joystickMapping;
+
     void Start()
     {
+
         ApplyDefaults();
 
         //_gameButtonList = GetGameButtonList();
@@ -538,8 +543,8 @@ public class GameBrain : MonoBehaviour
         //Re-initialize the buttons for the current fight.
         _buttonMaster.SetupButtons(_bossFight);
 
-
-        StartLoadingScreen();
+        StartGetReadyScreen();
+        //StartLoadingScreen();
     }
 
     #endregion
@@ -577,7 +582,7 @@ public class GameBrain : MonoBehaviour
     /// </summary>
     void EndGetReadyScreen()
     {
-        StartAttack();
+        StartLoadingScreen();
     }
 
     #endregion
@@ -614,7 +619,7 @@ public class GameBrain : MonoBehaviour
 
     void EndLoadingScreen()
     {
-        StartGetReadyScreen();
+        StartAttack();
     }
 
     #endregion
@@ -646,6 +651,7 @@ public class GameBrain : MonoBehaviour
             BuffParty1CritChance = _buffParty1CritChance,
             BuffParty2CritChance = _buffParty2CritChance,
             MusicVolume = _musicVolume,
+            TestMode = _joystickMapping.TestMode,
             EndRoundNotification = EndRoundNotification
         };
 
@@ -700,7 +706,7 @@ public class GameBrain : MonoBehaviour
         else
         {
             //Nobody won yet. Need to fight another round.
-            StartGetReadyScreen();
+            StartLoadingScreen();
         }
     }
 

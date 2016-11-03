@@ -25,6 +25,7 @@ public class BattleSettings
     public float BuffParty2CritChance;
 
     public float MusicVolume;
+    public bool TestMode = false;
 
     public Action<RoundResult> EndRoundNotification;
 }
