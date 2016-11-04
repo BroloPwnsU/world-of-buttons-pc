@@ -68,6 +68,7 @@ public class ButtonMaster
         this.AdminPositionJoystickAssignment = (JoystickAssignment)joystickMapping.Admin;
 
         this._testMode = joystickMapping.TestMode;
+        this._bFullSpread = joystickMapping.FullSpread;
 
         SetupButtons(bIsBossFight);
     }

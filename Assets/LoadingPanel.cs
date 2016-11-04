@@ -9,74 +9,65 @@ public class LoadingPanel : GamePanel
     //The minimum blurb duration is the shortest it can be shown, regardless of text length.
     public float MinimumTextDuration = 1.0f;
     public float TextDurationIncreasePerCharacter = 0.1f;
-    public float LoadingScreenDuration = 5.0f;
+    private float _wLoadingScreenDuration = 5.0f;
 
     private Action EndLoadingNotification;
-    private float _blurbTimeLeft = 0;
-    private float _blurbOriginalTimeLeft = 0;
     private float _loadingTimeLeft = 0;
-    private Stack<int> _blurbStack;
     private Text _loadingText;
     private GameObject _loadingBar;
     private float _barInitialScaleX;
 
+    public GameObject AdSpriteObject;
+    private SpriteRenderer _adSpriteRenderer;
+    public GameObject AdQuipObject;
+    private Text _adQuipText;
 
-    void Awake ()
+    public List<Sprite> AdSprites;
+    public List<string> AdQuips;
+
+    void Awake()
     {
         //Assign the text blurb, the loading bar, and possibly the loading bar wrapper.
-        _loadingText = GameObject.Find("LoadingBlurbText").GetComponent<Text>();
+        //_loadingText = GameObject.Find("LoadingBlurbText").GetComponent<Text>();
         _loadingBar = GameObject.Find("LoadingBar");
+        _adSpriteRenderer = AdSpriteObject.GetComponent<SpriteRenderer>();
+        _adQuipText = AdQuipObject.GetComponent<Text>();
 
         _barInitialScaleX = _loadingBar.transform.localScale.x;
     }
 
-    public void StartLoadingPanel(Action endLoadingNotification)
+    public void StartLoadingPanel(float fLoadingScreenDuration, Action endLoadingNotification)
     {
         //What what in the butt.
         base.Show();
         EndLoadingNotification = endLoadingNotification;
-        _blurbTimeLeft = MinimumTextDuration;
-        _blurbOriginalTimeLeft = _blurbTimeLeft;
-        _loadingTimeLeft = LoadingScreenDuration;
-        RebuildBlurbStack();
-        RenderBlurb();
+        _wLoadingScreenDuration = fLoadingScreenDuration;
+        _loadingTimeLeft = fLoadingScreenDuration;
+
+        //The ad is a sprite and a blurb together, forever
+        RenderAd();
     }
 
     void CloseLoadingPanel()
     {
         EndLoadingNotification();
     }
-	
-	// Update is called once per frame
-	void Update ()
+
+    // Update is called once per frame
+    void Update()
     {
-	    /*if (ButtonMaster.IsStartKey())
+        _loadingTimeLeft -= Time.deltaTime;
+        RenderLoadingBar();
+        
+        //The loading bar has dwindled to zero...
+        if (_loadingTimeLeft <= 0)
         {
-            //We can skip the loading screen by pressing the start button, just for convenience.
+            //Has the loading screen overstayed its welcome? Yes? What a pity. What. A. Pity.
             CloseLoadingPanel();
         }
-        else
-        {*/
-            _blurbTimeLeft -= Time.deltaTime;
-            _loadingTimeLeft -= Time.deltaTime;
-            RenderLoadingBar();
+    }
 
-            if (_blurbTimeLeft <= 0)
-            {
-                //The loading bar has dwindled to zero...
-                if (_loadingTimeLeft <= 0)
-                {
-                    //Has the loading screen overstayed its welcome? Yes? What a pity. What. A. Pity.
-                    CloseLoadingPanel();
-                }
-                else
-                {
-                    //Still have some loading screen power left in us? Show another blurb!
-                    RenderBlurb();
-                }
-            }
-        //}
-	}
+    #region Loading Bar/Timer
 
     void ResetLoadingBar()
     {
@@ -89,7 +80,7 @@ public class LoadingPanel : GamePanel
 
     void RenderLoadingBar()
     {
-        float currentScaleX = (_blurbTimeLeft / _blurbOriginalTimeLeft) * _barInitialScaleX;
+        float currentScaleX = (_loadingTimeLeft / _wLoadingScreenDuration) * _barInitialScaleX;
         _loadingBar.transform.localScale = new Vector3(
             currentScaleX,
             _loadingBar.transform.localScale.y,
@@ -107,27 +98,28 @@ public class LoadingPanel : GamePanel
             );
     }
 
-    void RenderBlurb()
+    #endregion
+
+    void RenderAd()
     {
-        int wNextIndex = 0;
-        if (_blurbStack.Count <= 0)
+        //Pull in an Ad sprite and the corresponding quip.
+        //Woohoo.
+        //Ad sprite and quip count should be the same.
+        if (this.AdSprites != null && this.AdSprites.Count > 0)
         {
-            //Have we run out of blurb indexes? Damn.
-            RebuildBlurbStack();
+            int wRandomIndex = UnityEngine.Random.Range(0, this.AdSprites.Count);
+            _adSpriteRenderer.sprite = AdSprites[wRandomIndex];
+            _adQuipText.text = AdQuips[wRandomIndex];
         }
-
-        //Grab the next blurb.
-        wNextIndex = _blurbStack.Pop();
-        
-        //Bind it to the text element
-        string sText = _blurbList[wNextIndex] + "...";
-        _loadingText.text = sText;
-
-        //Now figure out the time duration to make sure it shows longer for long blurbs
-        _blurbTimeLeft = MinimumTextDuration + (TextDurationIncreasePerCharacter * sText.Length);
-        _blurbOriginalTimeLeft = _blurbTimeLeft;
+        else
+        {
+            AdSpriteObject.SetActive(false);
+        }
     }
 
+    #region Blurbs
+
+    /*
     void RebuildBlurbStack()
     {
         _blurbStack = new Stack<int>();
@@ -151,8 +143,17 @@ public class LoadingPanel : GamePanel
         _blurbStack.Push(indexList[0]);
     }
 
-    private List<string> _blurbList = new List<string>()
-    {
+    //private List<string> _blurbList = new List<string>()
+    //{
+    //    "Enjoy this free advertisement while you wait...",
+    //    "And now a message from our sponsors...",
+    //    "Go Prime to hide ads! Kappa!",
+    //    "Loading only takes like a second, but we need you to look at this ad for at least 5 seconds in order to create the desire to buy something. It's basic marketing.",
+    //    "Conform Buy Consume Obey Conform Buy Consume Obey...",
+    //    "Would you kindly look at this ad? Would you? Kindly?",
+    //    "The advertisments will continue until morale improves!",
+
+        /*
         "Downloading launch day DLC",
         "Looking for raid",
         "Flaunting item score",
@@ -176,5 +177,8 @@ public class LoadingPanel : GamePanel
         "Waiting for High Noon",
         "Watching my Hanzo Play of the Game, nbd",
         "Eating cheetos and drinking Mountain Dew",
-    };
+        */
+    //};
+
+    #endregion
 }

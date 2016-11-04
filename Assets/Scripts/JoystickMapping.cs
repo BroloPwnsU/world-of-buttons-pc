@@ -15,6 +15,12 @@ public class JoystickMapping
     public int GreenD = 9;
     public bool TestMode = false;
 
+    public float PVPStartHealth = 12000;
+    public float MusicVolume = 0.3f;
+    public int RoundCount = 5;
+    public bool FullSpread = true;
+    public float LoadingScreenSeconds = 5;
+
     public static JoystickMapping CreateFromJSON(string jsonString)
     {
         return JsonUtility.FromJson<JoystickMapping>(jsonString);

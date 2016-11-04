@@ -101,7 +101,6 @@ public class GameBrain : MonoBehaviour
 
     void Start()
     {
-
         ApplyDefaults();
 
         //_gameButtonList = GetGameButtonList();
@@ -331,9 +330,9 @@ public class GameBrain : MonoBehaviour
 
     void ApplyDefaults()
     {
-        _roundCount = DefaultRoundCount;
-        _pvpStartHealth = PVPStartHealth;
-        _musicVolume = MusicVolume;
+        _roundCount = _joystickMapping.RoundCount;
+        _pvpStartHealth = _joystickMapping.PVPStartHealth;
+        _musicVolume = _joystickMapping.MusicVolume;
     }
 
     OptionPanelSettings GetOptionsSettings()
@@ -608,7 +607,7 @@ public class GameBrain : MonoBehaviour
         {
             if (gamePanel is LoadingPanel)
             {
-                ((LoadingPanel)gamePanel).StartLoadingPanel(EndLoadingScreen);
+                ((LoadingPanel)gamePanel).StartLoadingPanel(_joystickMapping.LoadingScreenSeconds, EndLoadingScreen);
             }
             else
             {

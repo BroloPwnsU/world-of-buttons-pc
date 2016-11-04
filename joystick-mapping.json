@@ -8,5 +8,10 @@
 "GreenC":7,
 "GreenD":6,
 "Admin":9,
-"TestMode":true
+"TestMode":true,
+"PVPStartHealth":3000,
+"MusicVolume":0.3,
+"FullSpread":false,
+"RoundCount":5,
+"LoadingScreenSeconds":5
 }

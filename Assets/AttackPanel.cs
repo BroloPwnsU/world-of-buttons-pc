@@ -974,7 +974,7 @@ public class AttackPanel : GamePanel
 
     void StopMusic()
     {
-        if (_audioSource.isPlaying)
+        if (_audioSource != null && _audioSource.isPlaying)
         {
             _audioSource.Stop();
         }
