@@ -9,6 +9,11 @@ public class CharacterCard : MonoBehaviour {
     //private SpriteRenderer _characterCardBackdrop;
     private CurrentColor _currentColor;
 
+    public Sprite BlueFemale;
+    public Sprite BlueMale;
+    public Sprite GreenFemale;
+    public Sprite GreenMale;
+
     // Use this for initialization
     void Awake ()
     {
@@ -21,10 +26,10 @@ public class CharacterCard : MonoBehaviour {
     enum CurrentColor
     {
         None,
-        Blue,
-        Red,
-        Green,
-        Gray
+        BlueMale,
+        BlueFemale,
+        GreenMale,
+        GreenFemale
     }
 
     public void Hide()
@@ -39,66 +44,66 @@ public class CharacterCard : MonoBehaviour {
         switch (_currentColor)
         {
             //Go to the next color
-            case CurrentColor.Red:
-                _currentColor = CurrentColor.Green;
-                LoadGreen();
+            case CurrentColor.GreenFemale:
+                _currentColor = CurrentColor.BlueMale;
+                LoadBlueMale();
                 break;
-            case CurrentColor.Green:
-                _currentColor = CurrentColor.Blue;
-                LoadBlue();
+            case CurrentColor.BlueMale:
+                _currentColor = CurrentColor.GreenMale;
+                LoadGreenMale();
                 break;
-            case CurrentColor.Blue:
-                _currentColor = CurrentColor.Gray;
-                LoadGray();
+            case CurrentColor.GreenMale:
+                _currentColor = CurrentColor.BlueFemale;
+                LoadBlueFemale();
                 break;
             case CurrentColor.None:
-            case CurrentColor.Gray:
+            case CurrentColor.BlueFemale:
             default:
-                _currentColor = CurrentColor.Red;
-                LoadRed();
+                _currentColor = CurrentColor.GreenFemale;
+                LoadGreenFemale();
                 break;
 
         }
     }
 
-    void LoadRed()
+    void LoadGreenFemale()
     {
-        _characterCardSprite.color = new Color(255, 0, 0, 1.0f);
+        _characterCardSprite.sprite = GreenFemale;
         _characterText.text = FormatText(
-            "Crimson Crusher",
+            "The Mint Markswoman",
             "California Gaming",
             "360 No Scope",
             "A gentle soul. Likes long walks on the beach, comfortable sweatshirts with concealing hoods, and max range headshots."
             );
     }
 
-    void LoadGreen()
+    void LoadGreenMale()
     {
-        _characterCardSprite.color = new Color(0, 255, 0, 1.0f);
+        _characterCardSprite.sprite = GreenMale;
         _characterText.text = FormatText(
-            "Emerald Assassin",
+            "The Emerald Assassin",
             "Gamer to the Grave",
             "Activate Hax",
             "Cunning, deceiptful, and a total prick. Would stab his own mother if he hadn't already. Known to employ poisoned daggers. Likes cats."
             );
     }
 
-    void LoadBlue()
+    void LoadBlueFemale()
     {
-        _characterCardSprite.color = new Color(0, 0, 255, 1.0f);
+        _characterCardSprite.sprite = BlueFemale;
         _characterText.text = FormatText(
-            "Steve the Sorcerer",
+            "The Cobalt Conjurer",
             "Party Wizard",
             "Mildly Magic Missile",
-            "Former wielder of the Staff of Gal'thorin, now retired. Spends free time frat parties making refreshments 'disappear'."
+            "Former wielder of the Staff of Gal'thorin, now retired. Nowadays spends her free time at frat parties making refreshments 'disappear'."
             );
     }
 
-    void LoadGray()
+    void LoadBlueMale()
     {
-        _characterCardSprite.color = new Color(180, 180, 180, 1.0f);
+        _characterCardSprite.sprite = BlueMale;
         _characterText.text = FormatText(
-            "The Gray Goon",
+            "The Denim Delinquent",
             "Polygons",
             "Flail Wildly",
             "What he lacks in subtlety he makes up for in strong arms and stronger odors. Wields his halitosis like a weapon. A lethal weapon."

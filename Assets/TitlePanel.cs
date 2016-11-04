@@ -5,6 +5,8 @@ using System.Collections.Generic;
 
 public class TitlePanel : GamePanel
 {
+    private CreditsPanelScript _creditsPanel;
+    private BroughtPanelScript _broughtPanel;
     private CharacterCard _characterCard;
     private TitleScreenGraphic _titleScreen;
     private Action EndTitleNotification;
@@ -20,10 +22,13 @@ public class TitlePanel : GamePanel
     public List<AudioClip> MusicClips;
     public float _musicVolume = 0.5f;
 
+
     // Use this for initialization
     void Awake()
     {
         _currentScreen = CurrentScreen.None;
+        _creditsPanel = GetComponentInChildren<CreditsPanelScript>(true);
+        _broughtPanel = GetComponentInChildren<BroughtPanelScript>(true);
         _characterCard = GetComponentInChildren<CharacterCard>(true);
         _titleScreen = GetComponentInChildren<TitleScreenGraphic>(true);
         _timeLeft = _titleScreenDuration;
@@ -67,12 +72,29 @@ public class TitlePanel : GamePanel
         }
     }
 
+    private CurrentScreen _lastFancyScreen = CurrentScreen.None;
     void ChangeScreen()
     {
         switch (_currentScreen)
         {
             case CurrentScreen.TitleScreen:
-                ShowCharacterCard();
+                switch (_lastFancyScreen)
+                {
+                    case CurrentScreen.CharacterCard:
+                        ShowBrought();
+                        break;
+                    case CurrentScreen.Brought:
+                        ShowCredits();
+                        break;
+                    case CurrentScreen.Credits:
+                    case CurrentScreen.None:
+                    default:
+                        ShowCharacterCard();
+                        break;
+                }
+                break;
+            case CurrentScreen.Brought:
+                ShowTitleScreen();
                 break;
             case CurrentScreen.CharacterCard:
             default:
@@ -84,10 +106,39 @@ public class TitlePanel : GamePanel
     void ShowCharacterCard()
     {
         //Hide the title screen, show the character card.
+        _lastFancyScreen = CurrentScreen.CharacterCard;
         _titleScreen.Hide();
         _characterCard.Show();
+        _broughtPanel.Hide();
+        _creditsPanel.Hide();
 
         _currentScreen = CurrentScreen.CharacterCard;
+        _timeLeft = _characterCardDuration;
+    }
+
+    void ShowCredits()
+    {
+        //Hide the title screen, show the character card.
+        _lastFancyScreen = CurrentScreen.Credits;
+        _titleScreen.Hide();
+        _characterCard.Hide();
+        _broughtPanel.Hide();
+        _creditsPanel.Show();
+
+        _currentScreen = CurrentScreen.Credits;
+        _timeLeft = _characterCardDuration;
+    }
+
+    void ShowBrought()
+    {
+        //Hide the title screen, show the character card.
+        _lastFancyScreen = CurrentScreen.Brought;
+        _titleScreen.Hide();
+        _characterCard.Hide();
+        _broughtPanel.Show();
+        _creditsPanel.Hide();
+
+        _currentScreen = CurrentScreen.Brought;
         _timeLeft = _characterCardDuration;
     }
 
@@ -96,6 +147,8 @@ public class TitlePanel : GamePanel
         //Hide the title screen, show the character card.
         _titleScreen.Show();
         _characterCard.Hide();
+        _broughtPanel.Hide();
+        _creditsPanel.Hide();
 
         _currentScreen = CurrentScreen.TitleScreen;
         _timeLeft = _titleScreenDuration;
@@ -105,7 +158,9 @@ public class TitlePanel : GamePanel
     {
         None,
         TitleScreen,
-        CharacterCard
+        CharacterCard,
+        Brought,
+        Credits
     }
 
     void PlayMusic()

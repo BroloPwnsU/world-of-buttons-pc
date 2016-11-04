@@ -413,7 +413,7 @@ public class ButtonMaster
                     { "Bedazzling Blade" },
                     { "Bewitching Blast" },
                     { "Befuddling Backhand" },
-                    { "Liger's Paw Casts the Spells" },
+                    { "Liger's Paw Clasps the Wrist" },
 
                     { "Activate Hax" },
                     { "Super Intense Stare" },
