@@ -13,7 +13,6 @@ public class LoadingPanel : GamePanel
 
     private Action EndLoadingNotification;
     private float _loadingTimeLeft = 0;
-    private Text _loadingText;
     private GameObject _loadingBar;
     private float _barInitialScaleX;
 

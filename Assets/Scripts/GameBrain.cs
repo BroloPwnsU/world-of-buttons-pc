@@ -319,7 +319,7 @@ public class GameBrain : MonoBehaviour
 
     private string OPTION_MENU_MODE = "MODE";
     private string OPTION_MENU_MODE_VALUE_BOSS = "BOSS BATTLE";
-    private string OPTION_MENU_MODE_VALUE_PVP = "PVP";
+    //private string OPTION_MENU_MODE_VALUE_PVP = "PVP";
     private string OPTION_MENU_ROUNDS = "ROUNDS";
     private string OPTION_MENU_CRIT_CHANCE = "CRIT CHANCE";
     private string OPTION_MENU_PLAYER_HEALTH = "HEALTH";
